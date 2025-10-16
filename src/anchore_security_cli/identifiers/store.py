@@ -3,7 +3,7 @@ import os
 import tomllib
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from glob import glob
+from glob import iglob
 
 import tomlkit
 
@@ -95,7 +95,7 @@ class Store:
     def _load(self, path: str):
         logging.info(f"Start loading security identifier store from {path}")
 
-        for file in glob(os.path.join(path, "**/ANCHORE-*.toml"), recursive=True):
+        for file in iglob(os.path.join(path, "**/ANCHORE-*.toml"), recursive=True):
             logging.trace(f"Loading file at {file}")
             with open(file, "rb") as f:
                 data = tomllib.load(f)

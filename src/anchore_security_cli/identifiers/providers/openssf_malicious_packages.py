@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from glob import glob
+from glob import iglob
 
 from anchore_security_cli.identifiers.aliases import Aliases
 from anchore_security_cli.identifiers.providers.provider import ArchiveProvider, ProviderRecord
@@ -16,7 +16,7 @@ class OpenSSFMaliciousPackages(ArchiveProvider):
 
     def _process_fetch(self, content_dir: str) -> list[ProviderRecord]:
         records = []
-        for file in glob(os.path.join(content_dir, "malicious-packages-main/osv/**/MAL-*.json"), recursive=True):
+        for file in iglob(os.path.join(content_dir, "malicious-packages-main/osv/**/MAL-*.json"), recursive=True):
             if not os.path.isfile(file):
                 continue
 

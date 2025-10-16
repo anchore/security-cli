@@ -25,9 +25,19 @@ class Aliases:
     rustsec: list[str] = field(default_factory=list)
     rconsortium: list[str] = field(default_factory=list)
     openssf_malicious_packages: list[str] = field(default_factory=list)
+    almalinux: list[str] = field(default_factory=list)
+    debian: list[str] = field(default_factory=list)
+    redhat: list[str] = field(default_factory=list)
+    rockylinux: list[str] = field(default_factory=list)
+    suse: list[str] = field(default_factory=list)
+    opensuse: list[str] = field(default_factory=list)
+    ubuntu: list[str] = field(default_factory=list)
+    minimos: list[str] = field(default_factory=list)
+    echo: list[str] = field(default_factory=list)
+    openeuler: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_list(cls, aliases: list[str]):  # noqa: C901, PLR0912
+    def from_list(cls, aliases: list[str]):  # noqa: C901, PLR0912, PLR0915
         cve = set()
         gcve = set()
         github = set()
@@ -39,6 +49,16 @@ class Aliases:
         rustsec = set()
         rconsortium = set()
         openssf_malicious_packages = set()
+        redhat = set()
+        rockylinux = set()
+        almalinux = set()
+        debian = set()
+        suse = set()
+        opensuse = set()
+        ubuntu = set()
+        minimos = set()
+        echo = set()
+        openeuler = set()
 
         for a in aliases:
             if not a:
@@ -72,6 +92,26 @@ class Aliases:
                 rconsortium.add(a)
             elif a.startswith("MAL-"):
                 openssf_malicious_packages.add(a)
+            elif a.startswith("ALSA-"):
+                almalinux.add(a)
+            elif a.startswith(("DSA-", "DTSA-", "DLA-")):
+                debian.add(a)
+            elif a.startswith("RHSA-"):
+                redhat.add(a)
+            elif a.startswith(("RLSA-", "RXSA-")):
+                rockylinux.add(a)
+            elif a.startswith("SUSE-"):
+                suse.add(a)
+            elif a.startswith("openSUSE-"):
+                opensuse.add(a)
+            elif a.startswith("USN-"):
+                ubuntu.add(a)
+            elif a.startswith("MINI-"):
+                minimos.add(a)
+            elif a.startswith("ECHO-"):
+                echo.add(a)
+            elif a.startswith("OESA-"):
+                openeuler.add(a)
 
         return Aliases(
             cve=list(cve),
@@ -85,6 +125,16 @@ class Aliases:
             rustsec=list(rustsec),
             rconsortium=list(rconsortium),
             openssf_malicious_packages=list(openssf_malicious_packages),
+            almalinux=almalinux,
+            debian=debian,
+            redhat=redhat,
+            rockylinux=rockylinux,
+            suse=suse,
+            opensuse=opensuse,
+            ubuntu=ubuntu,
+            minimos=minimos,
+            echo=echo,
+            openeuler=openeuler,
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:

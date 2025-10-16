@@ -1,17 +1,26 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
+from anchore_security_cli.identifiers.providers.almalinux import AlmaLinux
 from anchore_security_cli.identifiers.providers.bitnami import Bitnami
 from anchore_security_cli.identifiers.providers.chainguard import Chainguard
 from anchore_security_cli.identifiers.providers.cve5 import CVE5
+from anchore_security_cli.identifiers.providers.debian import Debian
+from anchore_security_cli.identifiers.providers.echo import Echo
 from anchore_security_cli.identifiers.providers.github import GitHub
 from anchore_security_cli.identifiers.providers.go import Go
+from anchore_security_cli.identifiers.providers.minimos import MinimOS
+from anchore_security_cli.identifiers.providers.openeuler import OpenEuler
 from anchore_security_cli.identifiers.providers.openssf_malicious_packages import OpenSSFMaliciousPackages
 from anchore_security_cli.identifiers.providers.provider import Provider
 from anchore_security_cli.identifiers.providers.psf import PSF
 from anchore_security_cli.identifiers.providers.pypa import PyPA
 from anchore_security_cli.identifiers.providers.rconsortium import RConsortium
+from anchore_security_cli.identifiers.providers.redhat import RedHat
+from anchore_security_cli.identifiers.providers.rockylinux import RockyLinux
 from anchore_security_cli.identifiers.providers.rustsec import RustSec
+from anchore_security_cli.identifiers.providers.suse import SUSE, OpenSUSE
+from anchore_security_cli.identifiers.providers.ubuntu import Ubuntu
 from anchore_security_cli.identifiers.store import CURRENT_ALLOCATION_ALIAS_KEYS
 
 
@@ -27,6 +36,16 @@ class Providers:
     rustsec: RustSec
     rconsortium: RConsortium
     openssf_malicious_packages: OpenSSFMaliciousPackages
+    almalinux: AlmaLinux
+    debian: Debian
+    redhat: RedHat
+    rockylinux: RockyLinux
+    suse: SUSE
+    opensuse: OpenSUSE
+    ubuntu: Ubuntu
+    echo: Echo
+    minimos: MinimOS
+    openeuler: OpenEuler
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -80,6 +99,16 @@ def fetch_all() -> Providers:
         rustsec = executor.submit(RustSec)
         rconsortium = executor.submit(RConsortium)
         openssf_malicious_packages = executor.submit(OpenSSFMaliciousPackages)
+        almalinux = executor.submit(AlmaLinux)
+        debian = executor.submit(Debian)
+        redhat = executor.submit(RedHat)
+        rockylinux = executor.submit(RockyLinux)
+        suse = executor.submit(SUSE)
+        opensuse = executor.submit(OpenSUSE)
+        ubuntu = executor.submit(Ubuntu)
+        echo = executor.submit(Echo)
+        minimos = executor.submit(MinimOS)
+        openeuler = executor.submit(OpenEuler)
 
     return Providers(
         cve5=cve5.result(),
@@ -92,4 +121,14 @@ def fetch_all() -> Providers:
         rustsec=rustsec.result(),
         rconsortium=rconsortium.result(),
         openssf_malicious_packages=openssf_malicious_packages.result(),
+        almalinux=almalinux.result(),
+        debian=debian.result(),
+        redhat=redhat.result(),
+        rockylinux=rockylinux.result(),
+        suse=suse.result(),
+        opensuse=opensuse.result(),
+        ubuntu=ubuntu.result(),
+        echo=echo.result(),
+        minimos=minimos.result(),
+        openeuler=openeuler.result(),
     )
