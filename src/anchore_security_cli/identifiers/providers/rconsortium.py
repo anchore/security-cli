@@ -1,6 +1,6 @@
 import logging
 import os
-from glob import glob
+from glob import iglob
 
 import yaml
 
@@ -17,7 +17,7 @@ class RConsortium(ArchiveProvider):
 
     def _process_fetch(self, content_dir: str) -> list[ProviderRecord]:
         records = []
-        for file in glob(os.path.join(content_dir, "r-advisory-database-main/vulns/**/RSEC-*.yaml"), recursive=True):
+        for file in iglob(os.path.join(content_dir, "r-advisory-database-main/vulns/**/RSEC-*.yaml"), recursive=True):
             if not os.path.isfile(file):
                 continue
 

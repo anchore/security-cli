@@ -124,7 +124,7 @@ class ArchiveProvider(Provider):
             if not ArchiveProvider._is_supported_archive_extension(archive_extension):
                 raise ValueError(f"Support for {archive_extension} is not currently implemented")
             file = f"content{archive_extension}"
-            cmd = f"curl -f -L -o {file} -X GET {self.url}"
+            cmd = f"curl -f -L -o {shlex.quote(file)} -X GET {shlex.quote(self.url)}"
             subprocess.check_output(shlex.split(cmd), text=True, stderr=subprocess.PIPE, cwd=tmp)  # noqa: S603
             logging.debug(f"Finish downloading {self.name} content from {self.url} to {tmp}")
 
