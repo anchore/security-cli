@@ -57,7 +57,7 @@ class Allocator:
         for r in self.providers.cve5.records:
             if r.id in already_processed:
                 continue
-            logging.info(f"Processing {r.id}")
+            logging.debug(f"Processing {r.id}")
             aliases = self.providers.aliases_by_cve(r.id)
             lookups = self._process_record(r, aliases)
             already_processed.update(lookups)
@@ -65,7 +65,7 @@ class Allocator:
         for r in self.providers.github.records:
             if r.id in already_processed:
                 continue
-            logging.info(f"Processing {r.id}")
+            logging.debug(f"Processing {r.id}")
             aliases = self.providers.aliases_by_ghsa(r.id)
             lookups = self._process_record(r, aliases)
             already_processed.update(lookups)
@@ -73,7 +73,7 @@ class Allocator:
         for r in self.providers.openssf_malicious_packages.records:
             if r.id in already_processed:
                 continue
-            logging.info(f"Processing {r.id}")
+            logging.debug(f"Processing {r.id}")
             aliases = self.providers.aliases_by_ossf(r.id)
             lookups = self._process_record(r, aliases)
             already_processed.update(lookups)
