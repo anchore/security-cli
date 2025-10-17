@@ -35,6 +35,8 @@ class Aliases:
     minimos: list[str] = field(default_factory=list)
     echo: list[str] = field(default_factory=list)
     openeuler: list[str] = field(default_factory=list)
+    amazonlinux: list[str] = field(default_factory=list)
+    oraclelinux: list[str] = field(default_factory=list)
 
     @classmethod
     def from_list(cls, aliases: list[str]):  # noqa: C901, PLR0912, PLR0915
@@ -59,6 +61,8 @@ class Aliases:
         minimos = set()
         echo = set()
         openeuler = set()
+        amazonlinux = set()
+        oraclelinux = set()
 
         for a in aliases:
             if not a:
@@ -112,6 +116,10 @@ class Aliases:
                 echo.add(a)
             elif a.startswith("OESA-"):
                 openeuler.add(a)
+            elif a.startswith("ELSA-"):
+                oraclelinux.add(a)
+            elif a.startswith("ALAS"):
+                amazonlinux.add(a)
 
         return Aliases(
             cve=list(cve),
@@ -135,6 +143,8 @@ class Aliases:
             minimos=minimos,
             echo=echo,
             openeuler=openeuler,
+            amazonlinux=amazonlinux,
+            oraclelinux=oraclelinux,
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:

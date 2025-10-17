@@ -9,6 +9,7 @@ from anchore_security_cli.identifiers.providers.debian import Debian
 from anchore_security_cli.identifiers.providers.echo import Echo
 from anchore_security_cli.identifiers.providers.github import GitHub
 from anchore_security_cli.identifiers.providers.go import Go
+from anchore_security_cli.identifiers.providers.grypedb import GrypeDB
 from anchore_security_cli.identifiers.providers.minimos import MinimOS
 from anchore_security_cli.identifiers.providers.openeuler import OpenEuler
 from anchore_security_cli.identifiers.providers.openssf_malicious_packages import OpenSSFMaliciousPackages
@@ -46,6 +47,7 @@ class Providers:
     echo: Echo
     minimos: MinimOS
     openeuler: OpenEuler
+    grypedb: GrypeDB
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -109,6 +111,7 @@ def fetch_all() -> Providers:
         echo = executor.submit(Echo)
         minimos = executor.submit(MinimOS)
         openeuler = executor.submit(OpenEuler)
+        grypedb = executor.submit(GrypeDB)
 
     return Providers(
         cve5=cve5.result(),
@@ -131,4 +134,5 @@ def fetch_all() -> Providers:
         echo=echo.result(),
         minimos=minimos.result(),
         openeuler=openeuler.result(),
+        grypedb=grypedb.result(),
     )
