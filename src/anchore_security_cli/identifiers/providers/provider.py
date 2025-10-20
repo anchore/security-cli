@@ -1,7 +1,6 @@
 import logging
 import pathlib
 import shlex
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -9,6 +8,7 @@ from datetime import UTC, datetime
 from dateutil.parser import parse as parse_date
 
 from anchore_security_cli.identifiers.aliases import Aliases
+from anchore_security_cli.utils import execute_command
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,14 +125,14 @@ class ArchiveProvider(Provider):
                 raise ValueError(f"Support for {archive_extension} is not currently implemented")
             file = f"content{archive_extension}"
             cmd = f"curl -f -L -o {shlex.quote(file)} -X GET {shlex.quote(self.url)}"
-            subprocess.check_output(shlex.split(cmd), text=True, stderr=subprocess.PIPE, cwd=tmp)  # noqa: S603
+            execute_command(cmd, cwd=tmp)
             logging.debug(f"Finish downloading {self.name} content from {self.url} to {tmp}")
 
             logging.debug(f"Start extracting {self.name} content to {tmp}")
             cmd = f"tar -xf {file}"
             if archive_extension == ".zip":
                 cmd = f"unzip {file}"
-            subprocess.check_output(shlex.split(cmd), text=True, stderr=subprocess.PIPE, cwd=tmp)  # noqa: S603
+            execute_command(cmd, cwd=tmp)
             logging.debug(f"Finish extracting {self.name} content to {tmp}")
 
             logging.debug(f"Start processing {self.name} content from {tmp}")
