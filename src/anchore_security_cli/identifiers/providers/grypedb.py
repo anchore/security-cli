@@ -1,13 +1,12 @@
 import json
 import logging
 import os
-import shlex
 import sqlite3
-import subprocess
 import tempfile
 
 from anchore_security_cli.identifiers.aliases import Aliases
 from anchore_security_cli.identifiers.providers.provider import Provider, ProviderRecord
+from anchore_security_cli.utils import execute_command
 
 
 class GrypeDB(Provider):
@@ -21,7 +20,7 @@ class GrypeDB(Provider):
         with tempfile.TemporaryDirectory() as tmp:
             logging.debug(f"Start fetching latest {self.name} content to {tmp}")
             os.environ["GRYPE_DB_CACHE_DIR"] = tmp
-            subprocess.check_output(shlex.split("grype db update"), text=True, stderr=subprocess.PIPE)  # noqa: S603
+            execute_command("grype db update")
             logging.debug(f"Finish fetching latest {self.name} content to {tmp}")
             path = os.path.join(tmp, "6/vulnerability.db")
             with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as conn:
