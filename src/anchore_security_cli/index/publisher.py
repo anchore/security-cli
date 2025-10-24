@@ -69,18 +69,21 @@ def publish(index_dir: str, env: DeploymentEnvironment):
     with tempfile.TemporaryDirectory() as tmp:
         archive = f"{metadata.config.name}.tar.zst"
         logging.debug(f"Start compressing {index_dir}")
-        execute_command(f"tar -C {index_dir} -I'zstd -T0 -11' -cvf {archive} {metadata.config.db_name}", cwd=tmp)
+        cmd = f"tar -C {index_dir} -I'zstd -T0 -11' -cvf {archive} {metadata.config.db_name}"
+        logging.trace(cmd)
+        execute_command(cmd, cwd=tmp)
         logging.debug(f"Finish compressing {index_dir}")
         oci_path = os.path.join("ghcr.io/anchore/data", str(env), metadata.config.name, metadata.config.format, f"v{metadata.config.version.model}")
         logging.debug(f"Start uploading archive to {oci_path}")
-        cmd = f"""oras push -v --no-tty
-        --annotation org.opencontainers.image.source={metadata.source.git_repo}
-        --annotation org.opencontainers.image.revision={metadata.source.commit}
-        --annotation org.opencontainers.image.licenses=CC0-1.0
-        --annotation org.opencontainers.image.created={metadata.rendered.isoformat()}
-        {oci_path}:git-{metadata.source.commit},{metadata.rendered.strftime("%Y-%m-%d")},latest
+        cmd = f"""oras push -v --no-tty \
+        --annotation org.opencontainers.image.source={metadata.source.git_repo} \
+        --annotation org.opencontainers.image.revision={metadata.source.commit} \
+        --annotation org.opencontainers.image.licenses=CC0-1.0 \
+        --annotation org.opencontainers.image.created={metadata.rendered.isoformat()} \
+        {oci_path}:git-{metadata.source.commit},{metadata.rendered.strftime("%Y-%m-%d")},latest \
         {archive}
         """
+        logging.trace(cmd)
         execute_command(cmd, cwd=tmp)
         logging.debug(f"Finish uploading archive to {oci_path}")
 
