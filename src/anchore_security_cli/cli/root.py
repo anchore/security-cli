@@ -3,6 +3,7 @@ import click
 from anchore_security_cli import __name__ as package_name
 from anchore_security_cli.cli.config import Application
 from anchore_security_cli.cli.id.commands import group as id_group
+from anchore_security_cli.cli.legacy.commands import group as legacy_group
 
 
 @click.option("--verbose", "-v", default=False, help="show logs", count=True)
@@ -71,3 +72,4 @@ def root(ctx: click.core.Context, verbose: bool) -> None:
 
 
 root.add_command(id_group)
+root.add_command(legacy_group)
