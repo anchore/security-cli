@@ -298,7 +298,6 @@ def _process_nvd_record(nvd: NVDRecord, curator: dict[str, Any], output_dir: str
     if cve5_affected:
         cve5["adp"]["affected"] = [v for (k,v) in sorted(cve5_affected.items())]
 
-    # TODO: keep going
     _persist(output_dir, nvd.cve_id, cve5)
 
 
