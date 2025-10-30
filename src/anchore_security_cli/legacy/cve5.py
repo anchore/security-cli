@@ -3,7 +3,6 @@ import logging
 import os
 import tomllib
 from dataclasses import dataclass
-from datetime import datetime
 from glob import iglob
 from typing import Any
 
@@ -40,15 +39,6 @@ def _persist(output_dir: str, cve_id: str, cve5: Any):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(cve5, f, ensure_ascii=False, sort_keys=True, indent=2)
-
-
-def _to_legacy_datetime_format(d: datetime) -> str:
-    s = d.isoformat()
-
-    if s.endswith("000+00:00"):
-        s = s.removesuffix("000+00:00") + "Z"
-
-    return s
 
 
 def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str):  # noqa: C901, PLR0912, PLR0915
