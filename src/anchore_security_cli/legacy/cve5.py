@@ -14,9 +14,9 @@ curator_to_cve5_additional_metadata = {
 }
 
 @dataclass(frozen=True, slots=True)
-class NVDRecord:
+class CVERecord:
     cve_id: str
-    curator: dict[str, Any]
+    snapshot: dict[str, Any]
     vuln: dict[str, Any]
 
 
@@ -36,7 +36,9 @@ def _construct_cpe(cpe: dict[str, str]) -> str:
 def _persist(output_dir: str, cve_id: str, cve5: Any):
     components = cve_id.split("-")
     year = components[1]
-    with open(os.path.join(output_dir, year, f"{cve_id}.json"), "w") as f:
+    path = os.path.join(output_dir, year, f"{cve_id}.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
         json.dump(cve5, f, ensure_ascii=False, sort_keys=True, indent=2)
 
 
@@ -49,11 +51,11 @@ def _to_legacy_datetime_format(d: datetime) -> str:
     return s
 
 
-def _process_nvd_record(nvd: NVDRecord, curator: dict[str, Any], output_dir: str):  # noqa: C901, PLR0912, PLR0915
+def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str):  # noqa: C901, PLR0912, PLR0915
     cve5 = {
         "additionalMetadata": {
-            "cveId": nvd.cve_id,
-            "cna": nvd.curator["cna"],
+            "cveId": cve.cve_id,
+            "cna": cve.snapshot["overview"]["cna"],
         },
     }
 
@@ -62,38 +64,37 @@ def _process_nvd_record(nvd: NVDRecord, curator: dict[str, Any], output_dir: str
         if v:
             cve5["additionalMetadata"][cve5_key] = v
 
-    description = nvd.curator.get("description")
+    description = cve.snapshot["overview"].get("description")
     if description:
         cve5["additionalMetadata"]["description"] = description
 
-    references = nvd.curator.get("references")
+    references = cve.snapshot["overview"].get("references")
     if references:
         cve5["additionalMetadata"]["references"] = references
 
-    remediations = nvd.curator.get("remediations")
+    remediations = cve.snapshot["overview"].get("remediations")
     if remediations:
         cve5["additionalMetadata"]["solutions"] = remediations
 
-    enrichment_reason = nvd.vuln.get("enrichment", {}).get("reason")
+    enrichment_reason = cve.vuln.get("enrichment", {}).get("reason")
     if enrichment_reason:
         cve5["additionalMetadata"]["reason"] = enrichment_reason
 
-    snapshot = nvd.vuln.get("snapshot")
-    if snapshot:
+    if "published" in cve.snapshot:
         cve5["additionalMetadata"]["upstream"] = {
-            "datePublished": snapshot["published"].isoformat(),
-            "dateReserved": snapshot["reserved"].isoformat(),
-            "dateUpdated": snapshot["updated"].isoformat(),
-            "digest": snapshot["digest"]["sha256"],
+            "datePublished": cve.snapshot["published"].isoformat(),
+            "dateReserved": cve.snapshot["reserved"].isoformat(),
+            "dateUpdated": cve.snapshot["updated"].isoformat(),
+            "digest": cve.snapshot["digest"]["sha256"],
         }
 
-    disputed = nvd.vuln.get("disputed")
+    disputed = cve.vuln.get("disputed")
     if disputed:
         mark_disputed = disputed.get("override", False)
         if mark_disputed:
             cve5["additionalMetadata"]["disputed"] = True
 
-    rejected = nvd.vuln.get("rejection")
+    rejected = cve.vuln.get("rejection")
     if rejected:
         date = rejected.get("date")
         reason = rejected.get("reason")
@@ -107,7 +108,7 @@ def _process_nvd_record(nvd: NVDRecord, curator: dict[str, Any], output_dir: str
         if reason:
             cve5["additionalMetadata"]["rejection"]["reason"] = reason
 
-    suppression = nvd.vuln.get("suppression")
+    suppression = cve.vuln.get("suppression")
     if suppression:
         ignore = suppression["override"]
         if ignore:
@@ -115,7 +116,7 @@ def _process_nvd_record(nvd: NVDRecord, curator: dict[str, Any], output_dir: str
 
     # TODO: eventually we will need to resolve the entire set of references from the aggregate view once we have that
     # so that we can process remove, override, etc.  For now we expect everything to be add so will only consider that.
-    references = nvd.vuln.get("references", {}).get("add")
+    references = cve.vuln.get("references", {}).get("add")
     cve5_references = []
     if references:
         for r in references:
@@ -127,7 +128,7 @@ def _process_nvd_record(nvd: NVDRecord, curator: dict[str, Any], output_dir: str
 
     cve5_affected: dict[int, dict[str, Any]] = {}
     # TODO: eventually need to support all of the new add/remove logic
-    overrides = nvd.vuln.get("products", {}).get("override", {})
+    overrides = cve.vuln.get("products", {}).get("override", {})
     if overrides:
         for idx, (record_type, records) in enumerate(overrides.items()):
              for r in records:
@@ -298,7 +299,7 @@ def _process_nvd_record(nvd: NVDRecord, curator: dict[str, Any], output_dir: str
     if cve5_affected:
         cve5["adp"]["affected"] = [v for (k,v) in sorted(cve5_affected.items())]
 
-    _persist(output_dir, nvd.cve_id, cve5)
+    _persist(output_dir, cve.cve_id, cve5)
 
 
 def _process_spec_file(spec_file: str, output_dir: str):
@@ -315,9 +316,14 @@ def _process_spec_file(spec_file: str, output_dir: str):
         logging.warning(f"Skipping {spec_file}.  No vulnerability data section found.")
         return
 
-    nvd_curator = curator.get("providers", {}).get("nvd", [])
-    if not nvd_curator:
-        logging.warning(f"Skipping {spec_file}.  No curator.providers.nvd data section found.")
+    snapshot = enriched.get("snapshot")
+    if not snapshot:
+        logging.warning(f"Skipping {spec_file}.  No snapshot section found.")
+        return
+
+    cve5_snapshot = snapshot.get("cve5", [])
+    if not cve5_snapshot:
+        logging.warning(f"Skipping {spec_file}.  No snapshot.cve5 section found.")
         return
 
     nvd_vuln = vuln.get("providers", {}).get("nvd", [])
@@ -325,25 +331,25 @@ def _process_spec_file(spec_file: str, output_dir: str):
         logging.warning(f"Skipping {spec_file}.  No vuln.providers.nvd data section found.")
         return
 
-    curator_by_cve = {}
+    snapshot_by_cve = {}
 
-    for n in nvd_curator:
-        curator_by_cve[n["cve_id"]] = n
+    for c in cve5_snapshot:
+        snapshot_by_cve[c["id"]] = c
 
-    nvd_records = []
+    cve_records = []
     for n in nvd_vuln:
-        cve_id = n["cve_id"]
-        if cve_id in curator_by_cve:
-            nvd_records.append(NVDRecord(
+        cve_id = n["id"]
+        if cve_id in snapshot_by_cve:
+            cve_records.append(CVERecord(
                 cve_id=cve_id,
-                curator=curator_by_cve[cve_id],
+                snapshot=snapshot_by_cve[cve_id],
                 vuln=n,
             ))
 
-    for nvd in nvd_records:
-        logging.debug(f"Start processing CVE {nvd.cve_id}")
-        _process_nvd_record(nvd, curator, output_dir)
-        logging.debug(f"Finish processing CVE {nvd.cve_id}")
+    for cve in cve_records:
+        logging.debug(f"Start processing CVE {cve.cve_id}")
+        _process_cve_record(cve, curator, output_dir)
+        logging.debug(f"Finish processing CVE {cve.cve_id}")
 
 
 def generate(spec_path: str, output: str):
