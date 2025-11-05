@@ -19,11 +19,11 @@ classifiers = [
   "Intended Audience :: Developers",
   "Intended Audience :: Information Technology",
   "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: Apache Software License",
   "Natural Language :: English",
   "Operating System :: POSIX :: Linux",
   "Operating System :: MacOS",
   "Topic :: Security",
-  "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Utilities",
 ]
 
