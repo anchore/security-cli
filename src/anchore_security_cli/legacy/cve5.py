@@ -116,15 +116,14 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                 },
             )
 
-    cve5_affected: dict[int, dict[str, Any]] = {}
+    cve5_affected: list[dict[str, Any]] = []
     # TODO: eventually need to support all of the new add/remove logic
     overrides = cve.vuln.get("products", {}).get("override", {})
     if overrides:
-        for idx, (record_type, records) in enumerate(overrides.items()):
+        for record_type, records in overrides.items():
              for r in records:
                 p = {}
-                cve5_affected[r.get("_index", idx)] = p
-
+                cve5_affected.append(p)
                 collection_url = r.get("collection_url")
                 if collection_url:
                     p["collectionURL"] = collection_url
@@ -177,12 +176,11 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                     for cpe in cpes:
                         p["cpes"].append(_construct_cpe(cpe))
 
-                versions: dict[int, dict[str, Any]] = {}
+                versions: list[dict[str, Any]] = []
                 affected = r.get("affected", [])
 
                 if affected:
                     for a in affected:
-                        q_index = a.get("_index", len(versions))
                         a = a["version"]
                         v = {
                             "status": "affected",
@@ -208,12 +206,11 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                         if scheme:
                             v["versionType"] = scheme
 
-                        versions[q_index] = v
+                        versions.append(v)
 
                 unaffected = r.get("unaffected", [])
                 if unaffected:
                     for a in unaffected:
-                        q_index = a.get("_index", len(versions))
                         a = a["version"]
                         v = {
                             "status": "unaffected",
@@ -239,12 +236,11 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                         if scheme:
                             v["versionType"] = scheme
 
-                        versions[q_index] = v
+                        versions.append(v)
 
                 investigating = r.get("investigating", [])
                 if investigating:
                     for a in investigating:
-                        q_index = a.get("_index", len(versions))
                         a = a["version"]
                         v = {
                             "status": "unknown",
@@ -270,10 +266,10 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                         if scheme:
                             v["versionType"] = scheme
 
-                        versions[q_index] = v
+                        versions.append(v)
 
                 if versions:
-                    p["versions"] = [v for (k,v) in sorted(versions.items())]
+                    p["versions"] = versions
 
     if cve5_affected or cve5_references:
         cve5["adp"] = {
@@ -287,7 +283,7 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
         cve5["adp"]["references"] = cve5_references
 
     if cve5_affected:
-        cve5["adp"]["affected"] = [v for (k,v) in sorted(cve5_affected.items())]
+        cve5["adp"]["affected"] = cve5_affected
 
     _persist(output_dir, cve.cve_id, cve5)
 
