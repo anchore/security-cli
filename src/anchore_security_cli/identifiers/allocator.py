@@ -78,4 +78,6 @@ class Allocator:
             lookups = self._process_record(r, aliases)
             already_processed.update(lookups)
 
+        self.store.validate()
+
         logging.info(f"Finish allocating ids using existing security identifier data from {self.data_path}")

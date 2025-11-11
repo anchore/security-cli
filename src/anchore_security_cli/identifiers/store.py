@@ -177,3 +177,32 @@ class Store:
 
             self._refresh_lookups(anchore_id)
         logging.debug(f"Finish updating record for identifier {anchore_id}")
+
+    def validate(self):
+        logging.info("Start validating store state")
+        identifier_counts: dict[str, dict[str, int]] = {}
+        failures = set()
+
+        for file in iglob(os.path.join(self._path, "**/ANCHORE-*.toml"), recursive=True):
+            with open(file, "rb") as f:
+                data = tomllib.load(f)
+
+            identifier = data["security"]["id"]
+
+            for k in CURRENT_ALLOCATION_ALIAS_KEYS:
+                if k in data["security"]["aliases"]:
+                    if k not in identifier_counts:
+                        identifier_counts[k] = {}
+
+                    for v in data["security"]["aliases"][k]:
+                        if v not in identifier_counts[k]:
+                            identifier_counts[k][v] = 0
+                        identifier_counts[k][v] += 1
+
+                        if identifier_counts[k][v] > 1:
+                            logging.warning(f"{identifier} failed validation, duplicates detected for {v}")
+                            failures.add(v)
+
+        if failures:
+            raise ValueError(f"Validation failed, please resolve duplicate allocations for {sorted(failures)}")
+        logging.info("Finish validating store state")
