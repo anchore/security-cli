@@ -1,4 +1,5 @@
 import logging
+from threading import Thread
 
 from anchore_security_cli.identifiers.aliases import Aliases
 from anchore_security_cli.identifiers.providers import Providers, fetch_all
@@ -12,15 +13,23 @@ class Allocator:
         self.store: Store | None = None
         self.providers: Providers | None = None
 
-    def refresh_store(self):
+    def _refresh_store(self):
         logging.info(f"Start refreshing security identifiers store at {self.data_path}")
         self.store = Store(self.data_path)
         logging.info(f"Finish refreshing security identifiers store at {self.data_path}")
 
-    def refresh_providers(self):
+    def _refresh_providers(self):
         logging.info("Start refreshing security identifier upstream providers")
         self.providers = fetch_all()
         logging.info("Finish refreshing security identifier upstream providers")
+
+    def _refresh(self):
+        store_refresh = Thread(target=self._refresh_store)
+        providers_refresh = Thread(target=self._refresh_providers)
+        store_refresh.start()
+        providers_refresh.start()
+        store_refresh.join()
+        providers_refresh.join()
 
     def _process_record(self, r: ProviderRecord, aliases: list[str]) -> list[str]:
         logging.trace(f"Found the following aliases for {r.id}: {aliases}")
@@ -50,10 +59,11 @@ class Allocator:
         logging.info(f"Start allocating ids using existing security identifier data from {self.data_path}")
 
         if refresh:
-            self.refresh_store()
-            self.refresh_providers()
+            self._refresh()
 
+        logging.info("Start processing allocations")
         already_processed = set()
+        logging.info("Start processing CVE5 allocations")
         for r in self.providers.cve5.records:
             if r.id in already_processed:
                 continue
@@ -61,7 +71,8 @@ class Allocator:
             aliases = self.providers.aliases_by_cve(r.id)
             lookups = self._process_record(r, aliases)
             already_processed.update(lookups)
-
+        logging.info("Finish processing CVE5 allocations")
+        logging.info("Start processing GitHub Security Advisory allocations")
         for r in self.providers.github.records:
             if r.id in already_processed:
                 continue
@@ -69,7 +80,8 @@ class Allocator:
             aliases = self.providers.aliases_by_ghsa(r.id)
             lookups = self._process_record(r, aliases)
             already_processed.update(lookups)
-
+        logging.info("Finish processing GitHub Security Advisory allocations")
+        logging.info("Start processing OpenSSF Malicious Packages allocations")
         for r in self.providers.openssf_malicious_packages.records:
             if r.id in already_processed:
                 continue
@@ -77,7 +89,7 @@ class Allocator:
             aliases = self.providers.aliases_by_ossf(r.id)
             lookups = self._process_record(r, aliases)
             already_processed.update(lookups)
-
+        logging.info("Finish processing OpenSSF Malicious Packages allocations")
+        logging.info("Finish processing allocations")
         self.store.validate()
-
         logging.info(f"Finish allocating ids using existing security identifier data from {self.data_path}")
