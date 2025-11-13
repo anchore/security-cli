@@ -110,8 +110,12 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
             cve5["additionalMetadata"]["ignore"] = True
 
     # TODO: eventually we will need to resolve the entire set of references from the aggregate view once we have that
-    # so that we can process remove, override, etc.  For now we expect everything to be add so will only consider that.
-    references = cve.vuln.get("references", {}).get("add")
+    # so that we can process drop, override, etc.  For now we expect everything to be merge (previously add), so will 
+    # only consider those keys.
+    references = cve.vuln.get("references", {}).get("merge")
+    if not references:
+        references = cve.vuln.get("references", {}).get("add")
+
     cve5_references = []
     if references:
         for r in references:
