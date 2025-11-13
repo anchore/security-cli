@@ -71,11 +71,16 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
         cve5["additionalMetadata"]["reason"] = enrichment_reason
 
     if "published" in cve.snapshot:
+        digest_algorithm = "xxh128"
+        if digest_algorithm not in cve.snapshot["digest"] and "sha256" in cve.snapshot["digest"]:
+            digest_algorithm = "sha256"
+
         cve5["additionalMetadata"]["upstream"] = {
             "datePublished": cve.snapshot["published"].isoformat(),
             "dateReserved": cve.snapshot["reserved"].isoformat(),
             "dateUpdated": cve.snapshot["updated"].isoformat(),
-            "digest": cve.snapshot["digest"]["sha256"],
+            "digest": cve.snapshot["digest"][digest_algorithm],
+            "digest_algorithm": digest_algorithm,
         }
 
     disputed = cve.vuln.get("disputed")
