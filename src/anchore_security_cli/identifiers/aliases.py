@@ -37,6 +37,7 @@ class Aliases:
     openeuler: list[str] = field(default_factory=list)
     amazonlinux: list[str] = field(default_factory=list)
     oraclelinux: list[str] = field(default_factory=list)
+    julia: list[str] = field(default_factory=list)
 
     @classmethod
     def from_list(cls, aliases: list[str]):  # noqa: C901, PLR0912, PLR0915
@@ -63,6 +64,7 @@ class Aliases:
         openeuler = set()
         amazonlinux = set()
         oraclelinux = set()
+        julia = set()
 
         for a in aliases:
             if not a:
@@ -120,6 +122,8 @@ class Aliases:
                 oraclelinux.add(a)
             elif a.startswith("ALAS"):
                 amazonlinux.add(a)
+            elif a.startswith("JLSEC-"):
+                julia.add(a)
 
         return Aliases(
             cve=list(cve),
@@ -145,6 +149,7 @@ class Aliases:
             openeuler=openeuler,
             amazonlinux=amazonlinux,
             oraclelinux=oraclelinux,
+            julia=julia,
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:
