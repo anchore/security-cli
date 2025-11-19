@@ -38,6 +38,7 @@ class Aliases:
     amazonlinux: list[str] = field(default_factory=list)
     oraclelinux: list[str] = field(default_factory=list)
     julia: list[str] = field(default_factory=list)
+    mageia: list[str] = field(default_factory=list)
 
     @classmethod
     def from_list(cls, aliases: list[str]):  # noqa: C901, PLR0912, PLR0915
@@ -65,6 +66,7 @@ class Aliases:
         amazonlinux = set()
         oraclelinux = set()
         julia = set()
+        mageia = set()
 
         for a in aliases:
             if not a:
@@ -124,6 +126,8 @@ class Aliases:
                 amazonlinux.add(a)
             elif a.startswith("JLSEC-"):
                 julia.add(a)
+            elif a.startswith("MGASA-"):
+                mageia.add(a)
 
         return Aliases(
             cve=list(cve),
@@ -150,6 +154,7 @@ class Aliases:
             amazonlinux=amazonlinux,
             oraclelinux=oraclelinux,
             julia=julia,
+            mageia=mageia,
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:

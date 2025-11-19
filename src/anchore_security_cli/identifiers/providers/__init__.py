@@ -11,6 +11,7 @@ from anchore_security_cli.identifiers.providers.github import GitHub
 from anchore_security_cli.identifiers.providers.go import Go
 from anchore_security_cli.identifiers.providers.grypedb import GrypeDB
 from anchore_security_cli.identifiers.providers.julia import Julia
+from anchore_security_cli.identifiers.providers.mageia import Mageia
 from anchore_security_cli.identifiers.providers.minimos import MinimOS
 from anchore_security_cli.identifiers.providers.openeuler import OpenEuler
 from anchore_security_cli.identifiers.providers.openssf_malicious_packages import OpenSSFMaliciousPackages
@@ -50,6 +51,7 @@ class Providers:
     openeuler: OpenEuler
     grypedb: GrypeDB
     julia: Julia
+    mageia: Mageia
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -115,6 +117,7 @@ def fetch_all() -> Providers:
         openeuler = executor.submit(OpenEuler)
         grypedb = executor.submit(GrypeDB)
         julia = executor.submit(Julia)
+        mageia = executor.submit(Mageia)
 
     return Providers(
         cve5=cve5.result(),
@@ -139,4 +142,5 @@ def fetch_all() -> Providers:
         openeuler=openeuler.result(),
         grypedb=grypedb.result(),
         julia=julia.result(),
+        mageia=mageia.result(),
     )
