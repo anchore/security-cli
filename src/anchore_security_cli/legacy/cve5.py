@@ -272,6 +272,9 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                         if version:
                             v["version"] = version
 
+                        if (less_than_or_equal or less_than) and not start_inclusive:
+                            v["version"] = "0"
+
                         if scheme:
                             v["versionType"] = scheme
 
@@ -302,10 +305,6 @@ def _process_spec_file(spec_file: str, output_dir: str):
         enriched = tomllib.load(f)
 
     curator = enriched.get("curator", {})
-    if not curator:
-        logging.warning(f"Skipping {spec_file}.  No curator data section found.")
-        return
-
     vuln = enriched.get("vuln")
     if not vuln:
         logging.warning(f"Skipping {spec_file}.  No vulnerability data section found.")
