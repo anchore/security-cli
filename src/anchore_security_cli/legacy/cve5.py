@@ -212,6 +212,9 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                         if version:
                             v["version"] = version
 
+                        if (less_than_or_equal or less_than) and not start_inclusive:
+                            v["version"] = "0"
+
                         if scheme:
                             v["versionType"] = scheme
 
@@ -241,6 +244,9 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
 
                         if version:
                             v["version"] = version
+
+                        if (less_than_or_equal or less_than) and not start_inclusive:
+                            v["version"] = "0"
 
                         if scheme:
                             v["versionType"] = scheme
