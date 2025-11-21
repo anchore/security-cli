@@ -24,6 +24,7 @@ from anchore_security_cli.identifiers.providers.rockylinux import RockyLinux
 from anchore_security_cli.identifiers.providers.rustsec import RustSec
 from anchore_security_cli.identifiers.providers.suse import SUSE, OpenSUSE
 from anchore_security_cli.identifiers.providers.ubuntu import Ubuntu
+from anchore_security_cli.identifiers.providers.wordfence import Wordfence
 from anchore_security_cli.identifiers.store import CURRENT_ALLOCATION_ALIAS_KEYS
 
 
@@ -52,6 +53,7 @@ class Providers:
     grypedb: GrypeDB
     julia: Julia
     mageia: Mageia
+    wordfence: Wordfence
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -118,6 +120,7 @@ def fetch_all() -> Providers:
         grypedb = executor.submit(GrypeDB)
         julia = executor.submit(Julia)
         mageia = executor.submit(Mageia)
+        wordfence = executor.submit(Wordfence)
 
     return Providers(
         cve5=cve5.result(),
@@ -143,4 +146,5 @@ def fetch_all() -> Providers:
         grypedb=grypedb.result(),
         julia=julia.result(),
         mageia=mageia.result(),
+        wordfence=wordfence.result(),
     )
