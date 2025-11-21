@@ -26,6 +26,7 @@ from anchore_security_cli.identifiers.providers.rockylinux import RockyLinux
 from anchore_security_cli.identifiers.providers.rustsec import RustSec
 from anchore_security_cli.identifiers.providers.suse import SUSE, OpenSUSE
 from anchore_security_cli.identifiers.providers.ubuntu import Ubuntu
+from anchore_security_cli.identifiers.providers.wordfence import Wordfence
 from anchore_security_cli.identifiers.store import CURRENT_ALLOCATION_ALIAS_KEYS
 
 
@@ -56,6 +57,7 @@ class Providers:
     mageia: Mageia
     cpan: CPAN
     arch: Arch
+    wordfence: Wordfence
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -124,6 +126,7 @@ def fetch_all() -> Providers:
         mageia = executor.submit(Mageia)
         cpan = executor.submit(CPAN)
         arch = executor.submit(Arch)
+        wordfence = executor.submit(Wordfence)
 
     return Providers(
         cve5=cve5.result(),
@@ -151,4 +154,5 @@ def fetch_all() -> Providers:
         mageia=mageia.result(),
         cpan=cpan.result(),
         arch=arch.result(),
+        wordfence=wordfence.result(),
     )
