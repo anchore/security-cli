@@ -11,7 +11,7 @@ from anchore_security_cli.identifiers.providers.debian import Debian
 from anchore_security_cli.identifiers.providers.echo import Echo
 from anchore_security_cli.identifiers.providers.github import GitHub
 from anchore_security_cli.identifiers.providers.go import Go
-from anchore_security_cli.identifiers.providers.grypedb import GrypeDB
+from anchore_security_cli.identifiers.providers.grypedb import GrypeDB, GrypeDBExtraCVEs
 from anchore_security_cli.identifiers.providers.julia import Julia
 from anchore_security_cli.identifiers.providers.mageia import Mageia
 from anchore_security_cli.identifiers.providers.minimos import MinimOS
@@ -58,6 +58,7 @@ class Providers:
     cpan: CPAN
     arch: Arch
     wordfence: Wordfence
+    grypedb_extras: GrypeDBExtraCVEs
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -127,6 +128,7 @@ def fetch_all() -> Providers:
         cpan = executor.submit(CPAN)
         arch = executor.submit(Arch)
         wordfence = executor.submit(Wordfence)
+        grypedb_extras = executor.submit(GrypeDBExtraCVEs)
 
     return Providers(
         cve5=cve5.result(),
@@ -155,4 +157,5 @@ def fetch_all() -> Providers:
         cpan=cpan.result(),
         arch=arch.result(),
         wordfence=wordfence.result(),
+        grypedb_extras=grypedb_extras.result(),
     )
