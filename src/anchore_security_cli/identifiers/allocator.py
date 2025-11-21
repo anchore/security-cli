@@ -77,6 +77,15 @@ class Allocator:
                     already_processed.update(lookups)
                 logging.info("Finish processing CVE5 allocations")
                 logging.info("Start processing GitHub Security Advisory allocations")
+                for r in self.providers.wordfence.records:
+                    if r.id in already_processed or not r.id.startswith("CVE-"):
+                        continue
+                    logging.debug(f"Processing {r.id}")
+                    aliases = self.providers.aliases_by_cve(r.id)
+                    lookups = self._process_record(r, aliases)
+                    already_processed.update(lookups)
+                logging.info("Finish processing Wordfence CVE  allocations")
+                logging.info("Start processing GitHub Security Advisory allocations")
                 for r in self.providers.github.records:
                     if r.id in already_processed:
                         continue
