@@ -57,7 +57,7 @@ class Allocator:
 
         return aliases
 
-    def allocate(self, refresh: bool = True):
+    def allocate(self, refresh: bool = True):  # noqa: C901, PLR0915
         with timer("security identifiers allocation"):
             logging.info(f"Start allocating ids using existing security identifier data from {self.data_path}")
 
@@ -76,7 +76,7 @@ class Allocator:
                     lookups = self._process_record(r, aliases)
                     already_processed.update(lookups)
                 logging.info("Finish processing CVE5 allocations")
-                logging.info("Start processing GitHub Security Advisory allocations")
+                logging.info("Start processing Wordfence CVE allocations")
                 for r in self.providers.wordfence.records:
                     if r.id in already_processed or not r.id.startswith("CVE-"):
                         continue
@@ -84,7 +84,16 @@ class Allocator:
                     aliases = self.providers.aliases_by_cve(r.id)
                     lookups = self._process_record(r, aliases)
                     already_processed.update(lookups)
-                logging.info("Finish processing Wordfence CVE  allocations")
+                logging.info("Finish processing Wordfence CVE allocations")
+                logging.info("Start processing GrypeDB extra CVE allocations")
+                for r in self.providers.grypedb_extras.records:
+                    if r.id in already_processed or not r.id.startswith("CVE-"):
+                        continue
+                    logging.debug(f"Processing {r.id}")
+                    aliases = self.providers.aliases_by_cve(r.id)
+                    lookups = self._process_record(r, aliases)
+                    already_processed.update(lookups)
+                logging.info("Finish processing GrypeDB extra CVE allocations")
                 logging.info("Start processing GitHub Security Advisory allocations")
                 for r in self.providers.github.records:
                     if r.id in already_processed:
