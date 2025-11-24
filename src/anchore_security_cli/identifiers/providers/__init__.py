@@ -89,7 +89,7 @@ class Providers:
             aliases = p.by_ossf(ossf_id)
             if aliases:
                 for a in aliases:
-                    results.update([a.id, *a.aliases.to_list(exclude=CURRENT_ALLOCATION_ALIAS_KEYS)])
+                    results.update([a.id, *a.aliases.to_list()])
         return list(results)
 
 
