@@ -178,10 +178,11 @@ class Store:
             self._refresh_lookups(anchore_id)
         logging.debug(f"Finish updating record for identifier {anchore_id}")
 
-    def validate(self):
+    def validate(self):  # noqa: C901
         logging.info("Start validating store state")
         identifier_counts: dict[str, dict[str, int]] = {}
-        failures = set()
+        validation_errors = set()
+        duplicates = set()
 
         for file in iglob(os.path.join(self._path, "**/ANCHORE-*.toml"), recursive=True):
             with open(file, "rb") as f:
@@ -190,6 +191,11 @@ class Store:
             identifier = data["security"]["id"]
 
             for k in CURRENT_ALLOCATION_ALIAS_KEYS:
+                if "aliases" not in data["security"]:
+                    msg = f"{identifier} failed validation, no upstream aliases detected"
+                    logging.warning(msg)
+                    validation_errors.add(msg)
+
                 if k in data["security"]["aliases"]:
                     if k not in identifier_counts:
                         identifier_counts[k] = {}
@@ -201,8 +207,12 @@ class Store:
 
                         if identifier_counts[k][v] > 1:
                             logging.warning(f"{identifier} failed validation, duplicates detected for {v}")
-                            failures.add(v)
+                            duplicates.add(v)
 
-        if failures:
-            raise ValueError(f"Validation failed, please resolve duplicate allocations for {sorted(failures)}")
+        if duplicates:
+            validation_errors.add(f"Validation failed, please resolve duplicate allocations for {sorted(duplicates)}")
+
+        if validation_errors:
+            raise ValueError(f"Validation failed: {validation_errors}")
+
         logging.info("Finish validating store state")
