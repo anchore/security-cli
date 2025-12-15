@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 
 
@@ -128,6 +129,8 @@ class Aliases:
                 julia.add(a)
             elif a.startswith("MGASA-"):
                 mageia.add(a)
+            else:
+                logging.warning(f"encountered unsupported alias: {a}")
 
         return Aliases(
             cve=list(cve),
