@@ -40,6 +40,7 @@ class Aliases:
     oraclelinux: list[str] = field(default_factory=list)
     julia: list[str] = field(default_factory=list)
     mageia: list[str] = field(default_factory=list)
+    snyk: list[str] = field(default_factory=list)
 
     @classmethod
     def normalize(cls, alias: str) -> str:
@@ -81,6 +82,7 @@ class Aliases:
         oraclelinux = set()
         julia = set()
         mageia = set()
+        snyk = set()
 
         for a in aliases:
             a = cls.normalize(a)
@@ -143,6 +145,8 @@ class Aliases:
                 julia.add(a)
             elif a.startswith("MGASA-"):
                 mageia.add(a)
+            elif a.startswith("SNYK-"):
+                snyk.add(a)
             else:
                 logging.warning(f"encountered unsupported alias: {a}")
 
@@ -172,6 +176,7 @@ class Aliases:
             oraclelinux=oraclelinux,
             julia=julia,
             mageia=mageia,
+            snyk=snyk,
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:
