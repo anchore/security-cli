@@ -29,6 +29,10 @@ class OpenSSFMaliciousPackages(ArchiveProvider):
             aliases = Aliases.from_list([record_id, *data.get("aliases", [])])
             published = self._parse_date(data.get("published"))
 
+            if not record_id.startswith("MAL-"):
+                logging.warning(f"Skipping OpenSSF Malicious Packages record with unexpected id: {record_id!r}")
+                continue
+
             records.append(
                 ProviderRecord(
                     id=record_id,

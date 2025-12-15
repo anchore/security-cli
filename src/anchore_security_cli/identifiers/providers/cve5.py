@@ -35,6 +35,10 @@ class CVE5(ArchiveProvider):
             if not published:
                 continue
 
+            if not record_id.startswith("CVE-"):
+                logging.warning(f"Skipping CVE record with unexpected id: {record_id!r}")
+                continue
+
             records.append(
                 ProviderRecord(
                     id=record_id,
