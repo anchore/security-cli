@@ -45,6 +45,7 @@ class Aliases:
     @classmethod
     def normalize(cls, alias: str) -> str:
         alias = alias.strip()
+        alias = alias.replace("‑", "-")  # noqa: RUF001
 
         if alias.startswith("UBUNTU-CVE-"):
             alias = alias.removeprefix("UBUNTU-")
@@ -152,7 +153,7 @@ class Aliases:
             elif a.startswith("SNYK-"):
                 snyk.add(a)
             else:
-                logging.warning(f"encountered unsupported alias: {a}")
+                logging.warning(f"encountered unsupported alias: {a!r}")
 
         return Aliases(
             cve=list(cve),
