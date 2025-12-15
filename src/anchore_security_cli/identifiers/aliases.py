@@ -42,6 +42,19 @@ class Aliases:
     mageia: list[str] = field(default_factory=list)
 
     @classmethod
+    def normalize(cls, alias: str) -> str:
+        alias = alias.strip()
+
+        if alias.startswith("UBUNTU-CVE-"):
+            alias = alias.removeprefix("UBUNTU-")
+        elif alias.startswith("DEBIAN-CVE-"):
+            alias = alias.removeprefix("DEBIAN-")
+        elif alias.startswith("ALPINE-CVE-"):
+            alias = alias.removeprefix("ALPINE-")
+
+        return alias
+
+    @classmethod
     def from_list(cls, aliases: list[str]):  # noqa: C901, PLR0912, PLR0915
         cve = set()
         gcve = set()
@@ -70,6 +83,7 @@ class Aliases:
         mageia = set()
 
         for a in aliases:
+            a = cls.normalize(a)
             if not a:
                 continue
 
