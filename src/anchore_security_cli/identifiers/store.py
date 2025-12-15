@@ -190,24 +190,24 @@ class Store:
 
             identifier = data["security"]["id"]
 
-            for k in CURRENT_ALLOCATION_ALIAS_KEYS:
-                if "aliases" not in data["security"]:
+            if "aliases" not in data["security"]:
                     msg = f"{identifier} failed validation, no upstream aliases detected"
-                    logging.warning(msg)
+                    logging.warning(f"{msg}: {data}")
                     validation_errors.add(msg)
+            else:
+                for k in CURRENT_ALLOCATION_ALIAS_KEYS:
+                    if k in data["security"]["aliases"]:
+                        if k not in identifier_counts:
+                            identifier_counts[k] = {}
 
-                if k in data["security"]["aliases"]:
-                    if k not in identifier_counts:
-                        identifier_counts[k] = {}
+                        for v in data["security"]["aliases"][k]:
+                            if v not in identifier_counts[k]:
+                                identifier_counts[k][v] = 0
+                            identifier_counts[k][v] += 1
 
-                    for v in data["security"]["aliases"][k]:
-                        if v not in identifier_counts[k]:
-                            identifier_counts[k][v] = 0
-                        identifier_counts[k][v] += 1
-
-                        if identifier_counts[k][v] > 1:
-                            logging.warning(f"{identifier} failed validation, duplicates detected for {v}")
-                            duplicates.add(v)
+                            if identifier_counts[k][v] > 1:
+                                logging.warning(f"{identifier} failed validation, duplicates detected for {v}")
+                                duplicates.add(v)
 
         if duplicates:
             validation_errors.add(f"Validation failed, please resolve duplicate allocations for {sorted(duplicates)}")
