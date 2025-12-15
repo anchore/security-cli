@@ -94,6 +94,10 @@ class Aliases:
                 gcve_id = cve_to_gcve(a)
                 if gcve_id:
                     gcve.add(gcve_id)
+            elif a.startswith("GSD-"):
+                # GSD is effectively dead, don't bother capturing these at the moment
+                # but we also don't want them getting logged as warnings
+                continue
             elif a.startswith("GCVE-"):
                 gcve.add(a)
                 cve_id = gcve_to_cve(a)
