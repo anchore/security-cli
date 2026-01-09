@@ -34,9 +34,6 @@ class CPAN(Provider):
                 logging.trace(f"processing CPAN data for {record_id}")
                 published = self._parse_date(a.get("reported"))
 
-                if not published:
-                    continue
-
                 records.append(
                     ProviderRecord(
                         id=record_id,
