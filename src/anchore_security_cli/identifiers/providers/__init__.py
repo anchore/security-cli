@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from anchore_security_cli.identifiers.providers.almalinux import AlmaLinux
 from anchore_security_cli.identifiers.providers.bitnami import Bitnami
 from anchore_security_cli.identifiers.providers.chainguard import Chainguard
+from anchore_security_cli.identifiers.providers.cpan import CPAN
 from anchore_security_cli.identifiers.providers.cve5 import CVE5
 from anchore_security_cli.identifiers.providers.debian import Debian
 from anchore_security_cli.identifiers.providers.echo import Echo
@@ -52,6 +53,7 @@ class Providers:
     grypedb: GrypeDB
     julia: Julia
     mageia: Mageia
+    cpan: CPAN
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -118,6 +120,7 @@ def fetch_all() -> Providers:
         grypedb = executor.submit(GrypeDB)
         julia = executor.submit(Julia)
         mageia = executor.submit(Mageia)
+        cpan = executor.submit(CPAN)
 
     return Providers(
         cve5=cve5.result(),
@@ -143,4 +146,5 @@ def fetch_all() -> Providers:
         grypedb=grypedb.result(),
         julia=julia.result(),
         mageia=mageia.result(),
+        cpan=cpan.result(),
     )

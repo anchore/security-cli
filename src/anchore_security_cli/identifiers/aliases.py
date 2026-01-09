@@ -41,6 +41,7 @@ class Aliases:
     julia: list[str] = field(default_factory=list)
     mageia: list[str] = field(default_factory=list)
     snyk: list[str] = field(default_factory=list)
+    cpan: list[str] = field(default_factory=list)
 
     @classmethod
     def normalize(cls, alias: str) -> str:
@@ -84,6 +85,7 @@ class Aliases:
         julia = set()
         mageia = set()
         snyk = set()
+        cpan = set()
 
         for a in aliases:
             a = cls.normalize(a)
@@ -152,6 +154,8 @@ class Aliases:
                 mageia.add(a)
             elif a.startswith("SNYK-"):
                 snyk.add(a)
+            elif a.startswith("CPANSA-"):
+                cpan.add(a)
             else:
                 logging.warning(f"encountered unsupported alias: {a!r}")
 
@@ -182,6 +186,7 @@ class Aliases:
             julia=julia,
             mageia=mageia,
             snyk=snyk,
+            cpan=cpan,
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:
