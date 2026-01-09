@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from anchore_security_cli.identifiers.providers.almalinux import AlmaLinux
+from anchore_security_cli.identifiers.providers.arch import Arch
 from anchore_security_cli.identifiers.providers.bitnami import Bitnami
 from anchore_security_cli.identifiers.providers.chainguard import Chainguard
 from anchore_security_cli.identifiers.providers.cpan import CPAN
@@ -54,6 +55,7 @@ class Providers:
     julia: Julia
     mageia: Mageia
     cpan: CPAN
+    arch: Arch
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -121,6 +123,7 @@ def fetch_all() -> Providers:
         julia = executor.submit(Julia)
         mageia = executor.submit(Mageia)
         cpan = executor.submit(CPAN)
+        arch = executor.submit(Arch)
 
     return Providers(
         cve5=cve5.result(),
@@ -147,4 +150,5 @@ def fetch_all() -> Providers:
         julia=julia.result(),
         mageia=mageia.result(),
         cpan=cpan.result(),
+        arch=arch.result(),
     )

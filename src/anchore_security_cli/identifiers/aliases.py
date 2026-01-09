@@ -42,6 +42,7 @@ class Aliases:
     mageia: list[str] = field(default_factory=list)
     snyk: list[str] = field(default_factory=list)
     cpan: list[str] = field(default_factory=list)
+    arch: list[str] = field(default_factory=list)
 
     @classmethod
     def normalize(cls, alias: str) -> str:
@@ -86,6 +87,7 @@ class Aliases:
         mageia = set()
         snyk = set()
         cpan = set()
+        arch = set()
 
         for a in aliases:
             a = cls.normalize(a)
@@ -156,6 +158,8 @@ class Aliases:
                 snyk.add(a)
             elif a.startswith("CPANSA-"):
                 cpan.add(a)
+            elif a.startswith(("ASA-", "AVG-")):
+                arch.add(a)
             else:
                 logging.warning(f"encountered unsupported alias: {a!r}")
 
@@ -187,6 +191,7 @@ class Aliases:
             mageia=mageia,
             snyk=snyk,
             cpan=cpan,
+            arch=arch,
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:
