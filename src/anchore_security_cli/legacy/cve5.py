@@ -128,6 +128,7 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
     cve5_affected: list[dict[str, Any]] = []
     # TODO: eventually need to support all of the new add/remove logic
     overrides = cve.vuln.get("products", {}).get("override", {})
+    patch_references: set[str] = set()
     if overrides:
         for record_type, records in overrides.items():
              for r in records:
@@ -160,8 +161,16 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                             p["packageName"] = package_name
 
                 source = r.get("source")
+                github_repo: str | None = None
                 if source:
                     p["repo"] = source[0]["url"]
+
+                    for s in source:
+                        s_url = s["url"]
+                        if s_url.startswith("https://github.com"):
+                            github_repo = s_url.strip("/")
+                            break
+
 
                 platforms = r.get("platforms")
                 if platforms:
@@ -189,8 +198,8 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                 affected = r.get("affected", [])
 
                 if affected:
-                    for a in affected:
-                        a = a["version"]
+                    for affected_record in affected:
+                        a = affected_record["version"]
                         v = {
                             "status": "affected",
                         }
@@ -219,6 +228,24 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                             v["versionType"] = scheme
 
                         versions.append(v)
+
+                        for remediation in affected_record.get("remediation", []):
+                            for patch in remediation.get("patch", []):
+                                commit = patch.get("commit")
+                                if commit:
+                                    if commit.startswith("https://"):
+                                        patch_references.add(commit)
+                                    # TODO: support rendering of URLs for other sources (once we have any data populated for them)
+                                    elif github_repo:
+                                        patch_references.add(f"{github_repo}/commit/{commit}")
+
+                                pr = patch.get("pr")
+                                if pr:
+                                    if pr.startswith("https://"):
+                                        patch_references.add(pr)
+                                    # TODO: support rendering of URLs for other sources (once we have any data populated for them)
+                                    elif github_repo:
+                                        patch_references.add(f"{github_repo}/pull/{commit}")
 
                 unaffected = r.get("unaffected", [])
                 if unaffected:
@@ -289,6 +316,13 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                 if versions:
                     p["versions"] = versions
 
+    for patch_ref in patch_references:
+        cve5_references.append(
+            {
+                "url": patch_ref,
+            },
+        )
+
     if cve5_affected or cve5_references:
         cve5["adp"] = {
             "providerMetadata": {
@@ -297,7 +331,7 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
             },
         }
 
-    if references:
+    if cve5_references:
         cve5["adp"]["references"] = cve5_references
 
     if cve5_affected:
