@@ -11,13 +11,19 @@ from anchore_security_cli.identifiers.aliases import Aliases
 from anchore_security_cli.identifiers.anchore_id import AnchoreId, parse
 
 # These are the current upstream identifier keys which can cause an anchore id to be allocated
-CURRENT_ALLOCATION_ALIAS_KEYS = {"cve", "gcve", "github", "openssf_malicious_packages"}
+CURRENT_ALLOCATION_ALIAS_KEYS: set[str] = {"cve", "gcve", "github", "openssf_malicious_packages"}
 
 
 @dataclass(frozen=True, slots=True)
 class AllocationRequest:
     year: int
     aliases: Aliases
+
+
+@dataclass(frozen=True, slots=True)
+class ConsolidationRequest:
+    to: str | AnchoreId | None
+    records: set[str | AnchoreId]
 
 
 class UnsupportedLookupIdentifierError(ValueError):
@@ -178,6 +184,134 @@ class Store:
             self._refresh_lookups(anchore_id)
         logging.debug(f"Finish updating record for identifier {anchore_id}")
 
+    def _merge_documents(self, to: tomlkit.TOMLDocument, source: tomlkit.TOMLDocument) -> tomlkit.TOMLDocument:
+        if "security" not in to or "aliases" not in to["security"]:
+            raise ValueError("Invalid merge target")
+
+        if "security" not in source or "aliases" not in source["security"]:
+            raise ValueError("Invalid merge source")
+
+        if "duplicates" not in to["security"]:
+            to["security"]["duplicates"] = tomlkit.array()
+
+        for k, v in source["security"]["aliases"].items():
+            if k not in to["security"]["aliases"]:
+                to["security"]["aliases"].append(k, tomlkit.array())
+                to["security"]["aliases"][k] = sorted(v)
+            else:
+                to["security"]["aliases"][k] = sorted(set(v+to["security"]["aliases"][k]))
+
+        to["security"]["duplicates"] = sorted(set(to["security"]["duplicates"] + [source["security"]["id"]] + source["security"].get("duplicates", [])))  # noqa: E501
+        return to
+
+    def _consolidate(self, request: ConsolidationRequest):  # noqa: C901, PLR0912
+        logging.debug(f"Start consolidating {request.records} to {request.to}")
+        records: set[AnchoreId] = set()
+        for o in request.records:
+            if isinstance(o, AnchoreId):
+                records.add(o)
+                continue
+
+            if o.startswith("ANCHORE-"):
+                records.add(parse(o))
+                continue
+
+            anchore_ids = self.lookup(o)
+            if not anchore_ids:
+                continue
+
+            for i in anchore_ids:
+                records.add(i)
+
+        to = request.to
+        if not to:
+            to = sorted(records)[0]
+
+        if isinstance(to, str):
+            if to.startswith("ANCHORE-"):
+                to = parse(to)
+            else:
+                anchore_ids = self.lookup(to)
+                if not anchore_ids:
+                    raise ValueError(f"No Anchore identifier record associated with {to}")
+
+                if len(anchore_ids) > 1:
+                    raise ValueError(f"Multiple Anchore identifiers corresponding to {to}.  The target must resolve to a single Anchore record, use the ANCHORE id to guaranteee this")  # noqa: E501
+
+                to = anchore_ids.pop()
+
+        if to in records:
+            records.remove(to)
+
+        consolidation_path = self._get_id_path(to)
+        if not os.path.exists(consolidation_path):
+            raise ValueError(f"No existing record for consolidation target {to}")
+
+        with open(consolidation_path) as f:
+            consolidation_doc = tomlkit.load(f)
+
+        for r in records:
+            r_path = self._get_id_path(r)
+            if not os.path.exists(r_path):
+                raise ValueError(f"No existing record for consolidation source {r}")
+
+            with open(r_path) as f:
+                r_doc = tomlkit.load(f)
+            consolidation_doc = self._merge_documents(consolidation_doc, r_doc)
+
+        with open(consolidation_path, "w") as f:
+            logging.trace(f"Start Persisting changes for identifier {to}")
+            tomlkit.dump(consolidation_doc, f, sort_keys=False)
+            logging.trace(f"Finish Persisting changes for identifier {to}")
+
+        for r in records:
+            os.remove(self._get_id_path(r))
+
+        logging.debug(f"Finish consolidating {request.records} to {request.to}")
+
+    def _generate_consolidation_requests(self) -> list[ConsolidationRequest]:  # noqa: C901
+        allocation_identifier_to_anchore_ids: dict[str, dict[str, set[AnchoreId]]] = {}
+
+        for file in iglob(os.path.join(self._path, "**/ANCHORE-*.toml"), recursive=True):
+            with open(file, "rb") as f:
+                data = tomllib.load(f)
+
+            identifier: AnchoreId = parse(data["security"]["id"])
+            if "aliases" not in data["security"]:
+                continue
+
+            for k in CURRENT_ALLOCATION_ALIAS_KEYS:
+                if k in data["security"]["aliases"]:
+                    if k not in allocation_identifier_to_anchore_ids:
+                        allocation_identifier_to_anchore_ids[k] = {}
+
+                    for v in data["security"]["aliases"][k]:
+                        if v not in allocation_identifier_to_anchore_ids[k]:
+                            allocation_identifier_to_anchore_ids[k][v] = set()
+                        allocation_identifier_to_anchore_ids[k][v].add(identifier)
+
+        requests: dict[AnchoreId, ConsolidationRequest] = {}
+        for alias_mapping in allocation_identifier_to_anchore_ids.values():
+            for anchore_record_mapping in alias_mapping.values():
+                if len(anchore_record_mapping) > 1:
+                    s= sorted(anchore_record_mapping)
+                    if s[0] not in requests:
+                        requests[s[0]] = ConsolidationRequest(to=s[0], records=set(s[1:]))
+                    else:
+                        requests[s[0]].records.update(s[1:])
+
+        return list(requests.values())
+
+    def consolidate(self, requests: list[ConsolidationRequest]):
+        logging.info("Start record consolidation")
+        if not requests:
+            requests = self._generate_consolidation_requests()
+
+        if requests:
+            for r in requests:
+                self._consolidate(r)
+        logging.info("Finish record consolidation")
+
     def validate(self):  # noqa: C901
         logging.info("Start validating store state")
         identifier_counts: dict[str, dict[str, int]] = {}
@@ -191,9 +325,9 @@ class Store:
             identifier = data["security"]["id"]
 
             if "aliases" not in data["security"]:
-                    msg = f"{identifier} failed validation, no upstream aliases detected"
-                    logging.warning(f"{msg}: {data}")
-                    validation_errors.add(msg)
+                msg = f"{identifier} failed validation, no upstream aliases detected"
+                logging.warning(f"{msg}: {data}")
+                validation_errors.add(msg)
             else:
                 for k in CURRENT_ALLOCATION_ALIAS_KEYS:
                     if k in data["security"]["aliases"]:

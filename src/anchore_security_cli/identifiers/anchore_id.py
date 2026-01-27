@@ -1,15 +1,26 @@
 from dataclasses import dataclass
+from functools import total_ordering
 
 PREFIX = "ANCHORE"
 
 
 @dataclass(frozen=True, slots=True)
-class AnchoreId:
+@total_ordering
+class AnchoreId:  # noqa: PLW1641
     year: int
     index: int
 
     def __str__(self) -> str:
         return f"{PREFIX}-{self.year}-{self.index}"
+
+    def __eq__(self, other):
+        return ((self.year, self.index) == (other.year, other.index))
+
+    def __lt__(self, other):
+        return ((self.year, self.index) < (other.year, other.index))
+
+    def __gt__(self, other):
+        return ((self.year, self.index) > (other.year, other.index))
 
 
 class InvalidAnchoreIdError(ValueError):
