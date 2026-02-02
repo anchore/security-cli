@@ -26,6 +26,20 @@ def generate_all_openeuler_id_variants(openeuler_id: str) -> list[str]:
 
     return result
 
+def generate_all_bellsoft_id_variants(bellsoft_id: str) -> list[str]:
+    # OESA is the OSV identifier prefix for openEuler Advisories; however, openEuler also use a different prefix
+    # of openEuler-SA- elsewhere, and we want to support both, so create a list of all possible variants when passed
+    # an id
+    result: list[str] = [bellsoft_id]
+
+    if bellsoft_id.startswith("BELL-SA-"):
+        if ":" in bellsoft_id:
+            result.append(bellsoft_id.replace(":", "-"))
+        else:
+            result.append(":".join(bellsoft_id.rsplit("-", 1)))
+
+    return result
+
 @dataclass(frozen=True)
 class Aliases:
     cve: list[str] = field(default_factory=list)
@@ -56,6 +70,7 @@ class Aliases:
     snyk: list[str] = field(default_factory=list)
     cpan: list[str] = field(default_factory=list)
     arch: list[str] = field(default_factory=list)
+    bellsoft: list[str] = field(default_factory=list)
 
     @classmethod
     def normalize(cls, alias: str) -> str:
@@ -68,6 +83,8 @@ class Aliases:
             alias = alias.removeprefix("DEBIAN-")
         elif alias.startswith("ALPINE-CVE-"):
             alias = alias.removeprefix("ALPINE-")
+        elif alias.startswith("BELL-CVE-"):
+            alias = alias.removeprefix("BELL-")
 
         return alias
 
@@ -101,6 +118,7 @@ class Aliases:
         snyk = set()
         cpan = set()
         arch = set()
+        bellsoft = set()
 
         for a in aliases:
             a = cls.normalize(a)
@@ -174,6 +192,9 @@ class Aliases:
                 cpan.add(a)
             elif a.startswith(("ASA-", "AVG-")):
                 arch.add(a)
+            elif a.startswith("BELL-SA-"):
+                for v in generate_all_bellsoft_id_variants(a):
+                    bellsoft.add(v)
             else:
                 logging.warning(f"encountered unsupported alias: {a!r}")
 
@@ -206,6 +227,7 @@ class Aliases:
             snyk=list(snyk),
             cpan=list(cpan),
             arch=list(arch),
+            bellsoft=list(bellsoft),
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:
