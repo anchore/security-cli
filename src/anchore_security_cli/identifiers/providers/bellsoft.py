@@ -36,7 +36,7 @@ class BellSoft(ArchiveProvider):
                     if not url or not url.startswith("https://docs.bell-sw.com/security/advisories/"):
                         continue
 
-                    bell_sa_id = url.split("/")[-1]
+                    bell_sa_id = url.strip("/").split("/")[-1]
 
                     if not bell_sa_id.startswith("BELL-SA-"):
                         continue
