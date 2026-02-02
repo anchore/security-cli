@@ -143,7 +143,7 @@ class Aliases:
                 almalinux.add(a)
             elif a.startswith(("DSA-", "DTSA-", "DLA-")):
                 debian.add(a)
-            elif a.startswith("RHSA-"):
+            elif a.startswith(("RHSA-", "RHBA-", "RHEA-")):
                 redhat.add(a)
             elif a.startswith(("RLSA-", "RXSA-")):
                 rockylinux.add(a)
