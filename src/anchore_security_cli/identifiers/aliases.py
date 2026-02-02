@@ -139,7 +139,7 @@ class Aliases:
                 rconsortium.add(a)
             elif a.startswith("MAL-"):
                 openssf_malicious_packages.add(a)
-            elif a.startswith("ALSA-"):
+            elif a.startswith(("ALSA-", "ALBA-", "ALEA-")):
                 almalinux.add(a)
             elif a.startswith(("DSA-", "DTSA-", "DLA-")):
                 debian.add(a)

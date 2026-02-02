@@ -17,7 +17,7 @@ class AlmaLinux(ArchiveProvider):
 
     def _process_fetch(self, content_dir: str) -> list[ProviderRecord]:
         records = []
-        for file in iglob(os.path.join(content_dir, "ALSA-*.json")):
+        for file in iglob(os.path.join(content_dir, "AL?A-*.json")):
             if not os.path.isfile(file):
                 continue
 
