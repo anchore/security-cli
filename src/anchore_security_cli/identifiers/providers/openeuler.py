@@ -4,7 +4,7 @@ from glob import iglob
 
 import orjson
 
-from anchore_security_cli.identifiers.aliases import Aliases
+from anchore_security_cli.identifiers.aliases import Aliases, generate_all_openeuler_id_variants
 from anchore_security_cli.identifiers.providers.provider import ArchiveProvider, ProviderRecord
 
 
@@ -29,12 +29,13 @@ class OpenEuler(ArchiveProvider):
             aliases = Aliases.from_list([record_id, *data.get("upstream", [])])
             published = self._parse_date(data.get("published"))
 
-            records.append(
-                ProviderRecord(
-                    id=record_id,
-                    published=published,
-                    aliases=aliases,
-                ),
-            )
+            for v in generate_all_openeuler_id_variants(record_id):
+                records.append(
+                    ProviderRecord(
+                        id=v,
+                        published=published,
+                        aliases=aliases,
+                    ),
+                )
 
         return records
