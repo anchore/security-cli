@@ -168,9 +168,9 @@ class Store:
                     doc["security"]["aliases"][alias_type].multiline(True)
                     has_updates = True
                 else:
-                    original = set(alias_set)
-                    alias_set.update(doc["security"]["aliases"][alias_type])
-                    if alias_set != original:
+                    existing = set(doc["security"]["aliases"][alias_type])
+                    alias_set.update(existing)
+                    if alias_set != existing:
                         doc["security"]["aliases"][alias_type] = sorted(alias_set)
                         doc["security"]["aliases"][alias_type].multiline(True)
                         has_updates = True

@@ -13,6 +13,19 @@ def gcve_to_cve(gcve_id: str) -> str | None:
         return gcve_id.replace("GCVE-0-", "CVE-")
     return None
 
+def generate_all_openeuler_id_variants(openeuler_id: str) -> list[str]:
+    # OESA is the OSV identifier prefix for openEuler Advisories; however, openEuler also use a different prefix
+    # of openEuler-SA- elsewhere, and we want to support both, so create a list of all possible variants when passed
+    # an id
+    result: list[str] = [openeuler_id]
+
+    if openeuler_id.startswith("OESA-"):
+        result.append(openeuler_id.replace("OESA-", "openEuler-SA-"))
+    elif openeuler_id.startswith("openEuler-SA-"):
+        result.append(openeuler_id.replace("openEuler-SA-", "OESA-"))
+
+    return result
+
 @dataclass(frozen=True)
 class Aliases:
     cve: list[str] = field(default_factory=list)
@@ -144,8 +157,9 @@ class Aliases:
                 minimos.add(a)
             elif a.startswith("ECHO-"):
                 echo.add(a)
-            elif a.startswith("OESA-"):
-                openeuler.add(a)
+            elif a.startswith(("OESA-", "openEuler-SA-")):
+                for v in generate_all_openeuler_id_variants(a):
+                    openeuler.add(v)
             elif a.startswith("ELSA-"):
                 oraclelinux.add(a)
             elif a.startswith("ALAS"):
@@ -175,23 +189,23 @@ class Aliases:
             rustsec=list(rustsec),
             rconsortium=list(rconsortium),
             openssf_malicious_packages=list(openssf_malicious_packages),
-            almalinux=almalinux,
-            debian=debian,
-            redhat=redhat,
-            rockylinux=rockylinux,
-            suse=suse,
-            opensuse=opensuse,
-            ubuntu=ubuntu,
-            minimos=minimos,
-            echo=echo,
-            openeuler=openeuler,
-            amazonlinux=amazonlinux,
-            oraclelinux=oraclelinux,
-            julia=julia,
-            mageia=mageia,
-            snyk=snyk,
-            cpan=cpan,
-            arch=arch,
+            almalinux=list(almalinux),
+            debian=list(debian),
+            redhat=list(redhat),
+            rockylinux=list(rockylinux),
+            suse=list(suse),
+            opensuse=list(opensuse),
+            ubuntu=list(ubuntu),
+            minimos=list(minimos),
+            echo=list(echo),
+            openeuler=list(openeuler),
+            amazonlinux=list(amazonlinux),
+            oraclelinux=list(oraclelinux),
+            julia=list(julia),
+            mageia=list(mageia),
+            snyk=list(snyk),
+            cpan=list(cpan),
+            arch=list(arch),
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:
