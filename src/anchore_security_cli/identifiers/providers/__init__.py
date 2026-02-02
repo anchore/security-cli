@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from anchore_security_cli.identifiers.providers.almalinux import AlmaLinux
 from anchore_security_cli.identifiers.providers.arch import Arch
+from anchore_security_cli.identifiers.providers.bellsoft import BellSoft
 from anchore_security_cli.identifiers.providers.bitnami import Bitnami
 from anchore_security_cli.identifiers.providers.chainguard import Chainguard
 from anchore_security_cli.identifiers.providers.cpan import CPAN
@@ -56,6 +57,7 @@ class Providers:
     mageia: Mageia
     cpan: CPAN
     arch: Arch
+    bellsoft: BellSoft
 
     def aliases_by_cve(self, cve_id: str) -> list[str]:
         results = {cve_id}
@@ -124,6 +126,7 @@ def fetch_all() -> Providers:
         mageia = executor.submit(Mageia)
         cpan = executor.submit(CPAN)
         arch = executor.submit(Arch)
+        bellsoft = executor.submit(BellSoft)
 
     return Providers(
         cve5=cve5.result(),
@@ -151,4 +154,5 @@ def fetch_all() -> Providers:
         mageia=mageia.result(),
         cpan=cpan.result(),
         arch=arch.result(),
+        bellsoft=bellsoft.result(),
     )
