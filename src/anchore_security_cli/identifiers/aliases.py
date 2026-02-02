@@ -40,6 +40,24 @@ def generate_all_bellsoft_id_variants(bellsoft_id: str) -> list[str]:
 
     return result
 
+
+def parse_identifier_from_url(url: str) -> str | None:
+    if not url:
+        return None
+
+    if url.startswith(("https://snyk.io/vuln/", "https://security.snyk.io/vuln/")):
+        elements = url.strip("/").rsplit("/", 1)
+        if len(elements) == 2 and elements[1].startswith("SNYK-"):
+            return elements[1]
+
+    if url.startswith("https://docs.bell-sw.com/security/advisories/"):
+        elements = url.strip("/").rsplit("/", 1)
+        if len(elements) == 2 and elements[1].startswith("BELL-SA-"):
+            return elements[1]
+
+    return None
+
+
 @dataclass(frozen=True)
 class Aliases:
     cve: list[str] = field(default_factory=list)

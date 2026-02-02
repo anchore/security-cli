@@ -4,7 +4,7 @@ from glob import iglob
 
 import orjson
 
-from anchore_security_cli.identifiers.aliases import Aliases
+from anchore_security_cli.identifiers.aliases import Aliases, parse_identifier_from_url
 from anchore_security_cli.identifiers.providers.provider import ArchiveProvider, ProviderRecord
 
 
@@ -26,18 +26,24 @@ class GitHub(ArchiveProvider):
                 data = orjson.loads(f.read())
 
             record_id = data["id"]
-            aliases = Aliases.from_list([record_id, *data.get("aliases", [])])
             published = self._parse_date(data.get("published"))
 
             if not record_id.startswith("GHSA-"):
                 logging.warning(f"Skipping GHSA record with unexpected id: {record_id!r}")
                 continue
 
+            aliases = [record_id, *data.get("aliases", [])]
+            for r in data.get("references", []):
+                url = r.get("url")
+                alias = parse_identifier_from_url(url)
+                if alias:
+                    aliases.append(alias)
+
             records.append(
                 ProviderRecord(
                     id=record_id,
                     published=published,
-                    aliases=aliases,
+                    aliases=Aliases.from_list(aliases),
                 ),
             )
 
