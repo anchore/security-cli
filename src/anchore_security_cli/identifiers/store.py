@@ -1,9 +1,11 @@
 import logging
 import os
 import tomllib
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from glob import iglob
+from itertools import batched
 
 import tomlkit
 
@@ -98,14 +100,23 @@ class Store:
 
             self._process(data)
 
+    def _load_file(self, file: str):
+        logging.trace(f"Loading file at {file}")
+        with open(file, "rb") as f:
+            data = tomllib.load(f)
+            self._process(data)
+
     def _load(self, path: str):
         logging.info(f"Start loading security identifier store from {path}")
 
-        for file in iglob(os.path.join(path, "**/ANCHORE-*.toml"), recursive=True):
-            logging.trace(f"Loading file at {file}")
-            with open(file, "rb") as f:
-                data = tomllib.load(f)
-                self._process(data)
+        with ThreadPoolExecutor() as executor:
+            for batch in batched(iglob(os.path.join(path, "**/ANCHORE-*.toml"), recursive=True), n=250, strict=False):
+                futures = []
+                for file in batch:
+                    futures.append(executor.submit(self._load_file, file))
+
+                for f in futures:
+                    f.result()
 
         logging.info(f"Finish loading security identifier store from {path}")
 
