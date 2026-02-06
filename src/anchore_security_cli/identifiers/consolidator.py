@@ -1,5 +1,6 @@
 
 from anchore_security_cli.identifiers.store import ConsolidationRequest, Store
+from anchore_security_cli.utils import timer
 
 
 class Consolidator:
@@ -8,16 +9,17 @@ class Consolidator:
         self.store: Store = Store(data_path)
 
     def consolidate(self, identifiers: list[str], resolve_to: str):
-        requests = []
-        if identifiers:
-            if resolve_to:
-                requests.append(ConsolidationRequest(
-                    to = resolve_to,
-                    records = identifiers,
-                ))
-            else:
-                requests.append(ConsolidationRequest(
-                    records = identifiers,
-                ))
+        with timer("security identifiers consolidation"):
+            requests = []
+            if identifiers:
+                if resolve_to:
+                    requests.append(ConsolidationRequest(
+                        to = resolve_to,
+                        records = identifiers,
+                    ))
+                else:
+                    requests.append(ConsolidationRequest(
+                        records = identifiers,
+                    ))
 
-        self.store.consolidate(requests)
+            self.store.consolidate(requests)

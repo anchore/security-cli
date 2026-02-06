@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from dateutil.parser import parse as parse_date
 
 from anchore_security_cli.identifiers.aliases import Aliases
-from anchore_security_cli.utils import execute_command
+from anchore_security_cli.utils import execute_command, timer
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,49 +48,50 @@ class Provider:
         return d
 
     def _by_cve(self):
-        logging.info(f"Start orienting {self.name} records by CVE")
+        logging.debug(f"Start orienting {self.name} records by CVE")
         self._lookup_by_cve = {}
         for r in self._records:
             for cve in r.aliases.cve:
                 if cve not in self._lookup_by_cve:
                     self._lookup_by_cve[cve] = []
                 self._lookup_by_cve[cve].append(r)
-        logging.info(f"Finish orienting {self.name} records by CVE: {len(self._lookup_by_cve)} total")
+        logging.debug(f"Finish orienting {self.name} records by CVE: {len(self._lookup_by_cve)} total")
 
     def _by_ghsa(self):
-        logging.info(f"Start orienting {self.name} records by GHSA")
+        logging.debug(f"Start orienting {self.name} records by GHSA")
         self._lookup_by_ghsa = {}
         for r in self._records:
             for ghsa in r.aliases.github:
                 if ghsa not in self._lookup_by_ghsa:
                     self._lookup_by_ghsa[ghsa] = []
                 self._lookup_by_ghsa[ghsa].append(r)
-        logging.info(f"Finish orienting {self.name} records by GHSA: {len(self._lookup_by_ghsa)} total")
+        logging.debug(f"Finish orienting {self.name} records by GHSA: {len(self._lookup_by_ghsa)} total")
 
     def _by_ossf(self):
-        logging.info(f"Start orienting {self.name} records by OpenSSF Malicious Package")
+        logging.debug(f"Start orienting {self.name} records by OpenSSF Malicious Package")
         self._lookup_by_ossf = {}
         for r in self._records:
             for ossf in r.aliases.openssf_malicious_packages:
                 if ossf not in self._lookup_by_ossf:
                     self._lookup_by_ossf[ossf] = []
                 self._lookup_by_ossf[ossf].append(r)
-        logging.info(f"Finish orienting {self.name} records by OpenSSF Malicious Package: {len(self._lookup_by_ossf)} total")
+        logging.debug(f"Finish orienting {self.name} records by OpenSSF Malicious Package: {len(self._lookup_by_ossf)} total")
 
     def _process_records(self):
-        logging.info(f"Start sorting {self.name} records by publish date")
+        logging.debug(f"Start sorting {self.name} records by publish date")
         self._records.sort(key=lambda k: (k.published, k.id))
-        logging.info(f"Finish sorting {self.name} records by publish date")
+        logging.debug(f"Finish sorting {self.name} records by publish date")
         self._by_cve()
         self._by_ghsa()
         self._by_ossf()
 
     def fetch(self) -> list[ProviderRecord]:
-        logging.info(f"Start fetching latest {self.name} records")
-        self._records = self._fetch()
-        logging.info(f"Finish fetching latest {self.name} records: {len(self._records)} total")
-        self._process_records()
-        return self._records
+        with timer(f"{self.name}: fetch"):
+            logging.info(f"Start fetching latest {self.name} records")
+            self._records = self._fetch()
+            logging.info(f"Finish fetching latest {self.name} records: {len(self._records)} total")
+            self._process_records()
+            return self._records
 
     def by_cve(self, cve_id: str) -> list[ProviderRecord] | None:
         return self._lookup_by_cve.get(cve_id)
@@ -119,23 +120,26 @@ class ArchiveProvider(Provider):
 
     def _fetch(self) -> list[ProviderRecord]:
         with tempfile.TemporaryDirectory() as tmp:
-            logging.debug(f"Start downloading {self.name} content from {self.url} to {tmp}")
-            archive_extension = ArchiveProvider._parse_archive_extension(self.url)
-            if not ArchiveProvider._is_supported_archive_extension(archive_extension):
-                raise ValueError(f"Support for {archive_extension} is not currently implemented")
-            file = f"content{archive_extension}"
-            cmd = f"curl -f -L -o {shlex.quote(file)} -X GET {shlex.quote(self.url)}"
-            execute_command(cmd, cwd=tmp)
-            logging.debug(f"Finish downloading {self.name} content from {self.url} to {tmp}")
+            with timer(f"{self.name}: downloading from {self.url}"):
+                logging.debug(f"Start downloading {self.name} content from {self.url} to {tmp}")
+                archive_extension = ArchiveProvider._parse_archive_extension(self.url)
+                if not ArchiveProvider._is_supported_archive_extension(archive_extension):
+                    raise ValueError(f"Support for {archive_extension} is not currently implemented")
+                file = f"content{archive_extension}"
+                cmd = f"curl -f -L -o {shlex.quote(file)} -X GET {shlex.quote(self.url)}"
+                execute_command(cmd, cwd=tmp)
+                logging.debug(f"Finish downloading {self.name} content from {self.url} to {tmp}")
 
-            logging.debug(f"Start extracting {self.name} content to {tmp}")
-            cmd = f"tar -xf {file}"
-            if archive_extension == ".zip":
-                cmd = f"unzip {file}"
-            execute_command(cmd, cwd=tmp)
-            logging.debug(f"Finish extracting {self.name} content to {tmp}")
+            with timer(f"{self.name}: extracting archive content"):
+                logging.debug(f"Start extracting {self.name} content to {tmp}")
+                cmd = f"tar -xf {file}"
+                if archive_extension == ".zip":
+                    cmd = f"unzip {file}"
+                execute_command(cmd, cwd=tmp)
+                logging.debug(f"Finish extracting {self.name} content to {tmp}")
 
-            logging.debug(f"Start processing {self.name} content from {tmp}")
-            records = self._process_fetch(tmp)
-            logging.debug(f"Finish processing {self.name} content from {tmp}")
+            with timer(f"{self.name}: processing"):
+                logging.debug(f"Start processing {self.name} content from {tmp}")
+                records = self._process_fetch(tmp)
+                logging.debug(f"Finish processing {self.name} content from {tmp}")
             return records

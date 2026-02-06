@@ -1,6 +1,9 @@
 import logging
 import shlex
 import subprocess
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 
 def execute_command(cmd: str, **kwargs) -> str | bytes | None:
@@ -13,3 +16,17 @@ def execute_command(cmd: str, **kwargs) -> str | bytes | None:
         logging.error(e.output)
         raise e
     return output
+
+@contextmanager
+def timer(message: str, logger: logging.Logger | None = None) -> Iterator[None]:
+    # Iterator[None] because @contextmanager transforms a generator into a context manager,
+    # but type checkers see the raw generator function
+    if not logger:
+        logger = logging.root
+
+    start_time = time.time()
+    try:
+        yield
+    finally:
+        elapsed_time = time.time() - start_time
+        logger.info(f"{message} took {elapsed_time:.2f} seconds")

@@ -1,16 +1,19 @@
 import logging
 import os
 import tomllib
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from glob import iglob
 from itertools import batched
+from threading import RLock
 
 import tomlkit
 
 from anchore_security_cli.identifiers.aliases import Aliases
 from anchore_security_cli.identifiers.anchore_id import AnchoreId, parse
+from anchore_security_cli.utils import timer
 
 # These are the current upstream identifier keys which can cause an anchore id to be allocated
 CURRENT_ALLOCATION_ALIAS_KEYS: set[str] = {"cve", "gcve", "github", "openssf_malicious_packages"}
@@ -38,7 +41,14 @@ class Store:
         self._path = path
         self._last_index_per_year: dict[int, int] = {}
         self._lookup_by_alias: dict[str, set[AnchoreId]] = {}
+        self._lock: RLock = RLock()
         self._load(path)
+
+    def _update_last_index_per_year(self, year: int, index: int):
+        with self._lock:
+            if year not in self._last_index_per_year:
+                self._last_index_per_year[year] = 0
+            self._last_index_per_year[year] = max(self._last_index_per_year[year], index)
 
     def _process_aliases(
         self,
@@ -75,9 +85,7 @@ class Store:
             ids.append(parse(d))
 
         for i in ids:
-            if i.year not in self._last_index_per_year:
-                self._last_index_per_year[i.year] = 0
-            self._last_index_per_year[i.year] = max(self._last_index_per_year[i.year], i.index)
+            self._update_last_index_per_year(i.year, i.index)
 
         self._process_aliases(anchore_id, data["security"].get("aliases", {}))
 
@@ -87,38 +95,37 @@ class Store:
         return os.path.join(self._path, str(anchore_id.year), str(anchore_id.index//1000), f"{anchore_id!s}.toml")
 
     def _refresh_lookups(self, anchore_id: str | AnchoreId):
-        logging.trace(f"Refreshing lookups for {anchore_id}")
+        with self._lock:
+            logging.trace(f"Refreshing lookups for {anchore_id}")
 
-        if isinstance(anchore_id, str):
-            anchore_id = parse(anchore_id)
+            if isinstance(anchore_id, str):
+                anchore_id = parse(anchore_id)
 
-        file_path = self._get_id_path(anchore_id)
-        with open(file_path, "rb") as f:
-            data = tomllib.load(f)
-            if data["security"]["id"] != str(anchore_id):
-                raise ValueError(f"Inconsistent data at {file_path}")
+            file_path = self._get_id_path(anchore_id)
+            with open(file_path, "rb") as f:
+                data = tomllib.load(f)
+                if data["security"]["id"] != str(anchore_id):
+                    raise ValueError(f"Inconsistent data at {file_path}")
 
-            self._process(data)
+                self._process(data)
 
-    def _load_file(self, file: str):
-        logging.trace(f"Loading file at {file}")
-        with open(file, "rb") as f:
-            data = tomllib.load(f)
-            self._process(data)
+    def _process_file_batch(self, files: Iterable[str]):
+        for file in files:
+            with open(file, "rb") as f:
+                logging.trace(f"Start processing file at {file}")
+                data = tomllib.load(f)
+                self._process(data)
+                logging.trace(f"Finish processing file at {file}")
 
     def _load(self, path: str):
-        logging.info(f"Start loading security identifier store from {path}")
+        with timer("security identifier store load"):
+            logging.info(f"Start loading security identifier store from {path}")
 
-        with ThreadPoolExecutor() as executor:
-            for batch in batched(iglob(os.path.join(path, "**/ANCHORE-*.toml"), recursive=True), n=250, strict=False):
-                futures = []
-                for file in batch:
-                    futures.append(executor.submit(self._load_file, file))
+            with ThreadPoolExecutor() as executor:
+                for batch in batched(iglob(os.path.join(path, "**/ANCHORE-*.toml"), recursive=True), n=5000, strict=False):
+                    executor.submit(self._process_file_batch, batch)
 
-                for f in futures:
-                    f.result()
-
-        logging.info(f"Finish loading security identifier store from {path}")
+            logging.info(f"Finish loading security identifier store from {path}")
 
     def lookup(self, alternate_id: str) -> set[AnchoreId] | None:
         logging.trace(f"Performing lookup for {alternate_id}")
@@ -132,67 +139,69 @@ class Store:
         return anchore_ids
 
     def assign(self, r: AllocationRequest) -> AnchoreId:
-        logging.debug(f"Start allocating identifier for {r}")
-        if r.year not in self._last_index_per_year:
-            self._last_index_per_year[r.year] = 0
+        with self._lock:
+            logging.debug(f"Start allocating identifier for {r}")
+            if r.year not in self._last_index_per_year:
+                self._last_index_per_year[r.year] = 0
 
-        self._last_index_per_year[r.year] += 1
-        index = self._last_index_per_year[r.year]
-        anchore_id = AnchoreId(year=r.year, index=index)
-        doc = tomlkit.document()
-        doc.append("security", tomlkit.table())
-        doc["security"]["id"] = str(anchore_id)
-        doc["security"]["allocated"] = datetime.now(tz=UTC)
-        doc["security"].append("aliases", tomlkit.table(is_super_table=True))
-        for alias_type, aliases in asdict(r.aliases).items():
-            if aliases:
-                doc["security"]["aliases"][alias_type] = sorted(set(aliases))
-                doc["security"]["aliases"][alias_type].multiline(True)
+            self._last_index_per_year[r.year] += 1
+            index = self._last_index_per_year[r.year]
+            anchore_id = AnchoreId(year=r.year, index=index)
+            doc = tomlkit.document()
+            doc.append("security", tomlkit.table())
+            doc["security"]["id"] = str(anchore_id)
+            doc["security"]["allocated"] = datetime.now(tz=UTC)
+            doc["security"].append("aliases", tomlkit.table(is_super_table=True))
+            for alias_type, aliases in asdict(r.aliases).items():
+                if aliases:
+                    doc["security"]["aliases"][alias_type] = sorted(set(aliases))
+                    doc["security"]["aliases"][alias_type].multiline(True)
 
-        path = self._get_id_path(anchore_id)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+            path = self._get_id_path(anchore_id)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        if os.path.exists(path):
-            raise Exception(f"A file already exists at {path}, assignment aborted")
+            if os.path.exists(path):
+                raise Exception(f"A file already exists at {path}, assignment aborted")
 
-        with open(path, "w") as f:
-            tomlkit.dump(doc, f, sort_keys=False)
+            with open(path, "w") as f:
+                tomlkit.dump(doc, f, sort_keys=False)
 
-        self._refresh_lookups(anchore_id)
-        logging.debug(f"Finish allocating identifier for {r}")
+            self._refresh_lookups(anchore_id)
+            logging.debug(f"Finish allocating identifier for {r}")
 
     def update(self, anchore_id: AnchoreId, aliases: Aliases):
-        logging.debug(f"Start updating record for identifier {anchore_id}")
-        path = self._get_id_path(anchore_id)
-        if not os.path.exists(path):
-            return
+        with self._lock:
+            logging.debug(f"Start updating record for identifier {anchore_id}")
+            path = self._get_id_path(anchore_id)
+            if not os.path.exists(path):
+                return
 
-        with open(path) as f:
-            doc = tomlkit.load(f)
+            with open(path) as f:
+                doc = tomlkit.load(f)
 
-        has_updates = False
-        for alias_type, a in asdict(aliases).items():
-            if a:
-                alias_set = set(a)
-                if alias_type not in doc["security"]["aliases"]:
-                    doc["security"]["aliases"][alias_type] = sorted(alias_set)
-                    doc["security"]["aliases"][alias_type].multiline(True)
-                    has_updates = True
-                else:
-                    existing = set(doc["security"]["aliases"][alias_type])
-                    alias_set.update(existing)
-                    if alias_set != existing:
+            has_updates = False
+            for alias_type, a in asdict(aliases).items():
+                if a:
+                    alias_set = set(a)
+                    if alias_type not in doc["security"]["aliases"]:
                         doc["security"]["aliases"][alias_type] = sorted(alias_set)
                         doc["security"]["aliases"][alias_type].multiline(True)
                         has_updates = True
+                    else:
+                        existing = set(doc["security"]["aliases"][alias_type])
+                        alias_set.update(existing)
+                        if alias_set != existing:
+                            doc["security"]["aliases"][alias_type] = sorted(alias_set)
+                            doc["security"]["aliases"][alias_type].multiline(True)
+                            has_updates = True
 
-        if has_updates:
-            with open(path, "w") as f:
-                logging.trace(f"Start Persisting changes for identifier {anchore_id}")
-                tomlkit.dump(doc, f, sort_keys=False)
-                logging.trace(f"Finish Persisting changes for identifier {anchore_id}")
+            if has_updates:
+                with open(path, "w") as f:
+                    logging.trace(f"Start Persisting changes for identifier {anchore_id}")
+                    tomlkit.dump(doc, f, sort_keys=False)
+                    logging.trace(f"Finish Persisting changes for identifier {anchore_id}")
 
-            self._refresh_lookups(anchore_id)
+                self._refresh_lookups(anchore_id)
         logging.debug(f"Finish updating record for identifier {anchore_id}")
 
     def _merge_documents(self, to: tomlkit.TOMLDocument, source: tomlkit.TOMLDocument) -> tomlkit.TOMLDocument:
@@ -281,6 +290,7 @@ class Store:
         logging.debug(f"Finish consolidating {request.records} to {request.to}")
 
     def _generate_consolidation_requests(self) -> list[ConsolidationRequest]:  # noqa: C901
+        logging.info("Start generation of consolidation requests")
         allocation_identifier_to_anchore_ids: dict[str, dict[str, set[AnchoreId]]] = {}
 
         for file in iglob(os.path.join(self._path, "**/ANCHORE-*.toml"), recursive=True):
@@ -311,7 +321,9 @@ class Store:
                     else:
                         requests[s[0]].records.update(s[1:])
 
-        return list(requests.values())
+        ret = list(requests.values())
+        logging.info("Finish generation of consolidation requests")
+        return ret
 
     def consolidate(self, requests: list[ConsolidationRequest]):
         logging.info("Start record consolidation")
