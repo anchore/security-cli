@@ -78,7 +78,7 @@ class Allocator:
                 logging.info("Finish processing CVE5 allocations")
                 logging.info("Start processing Wordfence CVE allocations")
                 for r in self.providers.wordfence.records:
-                    if r.id in already_processed or not r.id.startswith("CVE-"):
+                    if r.id in already_processed or not r.id.startswith("CVE-2"):
                         continue
                     logging.debug(f"Processing {r.id}")
                     aliases = self.providers.aliases_by_cve(r.id)
@@ -87,7 +87,7 @@ class Allocator:
                 logging.info("Finish processing Wordfence CVE allocations")
                 logging.info("Start processing GrypeDB extra CVE allocations")
                 for r in self.providers.grypedb_extras.records:
-                    if r.id in already_processed or not r.id.startswith("CVE-"):
+                    if r.id in already_processed or not r.id.startswith("CVE-2"):
                         continue
                     logging.debug(f"Processing {r.id}")
                     aliases = self.providers.aliases_by_cve(r.id)
