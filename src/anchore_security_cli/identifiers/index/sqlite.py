@@ -84,6 +84,40 @@ class SQLiteIndex(BaseSQLiteIndex):
                     ),
                 )
 
+                # Always insert an alias record for the `anchore` provider to the record.
+                # This gives a single simple lookup mechanism for indexing into the `security_identifiers`
+                # table given any id.
+                conn.execute(
+                    """
+                    INSERT INTO `security_aliases` (
+                        `anchore_id`, `alias_provider`, `alias_id`
+                    ) VALUES (?, ?, ?)
+                    """,
+                    (
+                        s["id"],
+                        "anchore",
+                        s["id"],
+                    ),
+                )
+
+                for duplicate in s.get("duplicates", []):
+                    if duplicate == s["id"]:
+                        self._logger.warning(f"Unnecessary duplicate: {duplicate}")
+                        continue
+
+                    conn.execute(
+                        """
+                        INSERT INTO `security_aliases` (
+                            `anchore_id`, `alias_provider`, `alias_id`
+                        ) VALUES (?, ?, ?)
+                        """,
+                        (
+                            s["id"],
+                            "anchore",
+                            duplicate,
+                        ),
+                    )
+
                 for provider, aliases in s.get("aliases", {}).items():
                     for alias in aliases:
                         conn.execute(
