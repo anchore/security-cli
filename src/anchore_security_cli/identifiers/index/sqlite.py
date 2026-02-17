@@ -21,7 +21,7 @@ class SQLiteIndex(BaseSQLiteIndex):
                 name="security-identifiers",
                 db_name="security-identifiers.db",
                 format="sqlite",
-                version=IndexVersion(model=1,revision=0,addition=0),
+                version=IndexVersion(model=0,revision=1,addition=0),
             ),
         )
 
