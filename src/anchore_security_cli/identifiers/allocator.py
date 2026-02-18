@@ -57,7 +57,7 @@ class Allocator:
 
         return aliases
 
-    def allocate(self, refresh: bool = True):  # noqa: C901, PLR0915
+    def allocate(self, refresh: bool = True):  # noqa: C901, PLR0912, PLR0915
         with timer("security identifiers allocation"):
             logging.info(f"Start allocating ids using existing security identifier data from {self.data_path}")
 
@@ -78,7 +78,10 @@ class Allocator:
                 logging.info("Finish processing CVE5 allocations")
                 logging.info("Start processing Wordfence CVE allocations")
                 for r in self.providers.wordfence.records:
-                    if r.id in already_processed or not r.id.startswith("CVE-2"):
+                    if r.id in already_processed:
+                        continue
+                    if not r.id.startswith("CVE-2"):
+                        logging.warning(f"Skipping allocation for unexpected identifier: {r.id}")
                         continue
                     logging.debug(f"Processing {r.id}")
                     aliases = self.providers.aliases_by_cve(r.id)
@@ -87,7 +90,10 @@ class Allocator:
                 logging.info("Finish processing Wordfence CVE allocations")
                 logging.info("Start processing GrypeDB extra CVE allocations")
                 for r in self.providers.grypedb_extras.records:
-                    if r.id in already_processed or not r.id.startswith("CVE-2"):
+                    if r.id in already_processed:
+                        continue
+                    if not r.id.startswith("CVE-2"):
+                        logging.warning(f"Skipping allocation for unexpected identifier: {r.id}")
                         continue
                     logging.debug(f"Processing {r.id}")
                     aliases = self.providers.aliases_by_cve(r.id)
