@@ -87,7 +87,7 @@ class Aliases:
     mageia: list[str] = field(default_factory=list)
     snyk: list[str] = field(default_factory=list)
     cpan: list[str] = field(default_factory=list)
-    arch: list[str] = field(default_factory=list)
+    archlinux: list[str] = field(default_factory=list)
     bellsoft: list[str] = field(default_factory=list)
 
     @classmethod
@@ -135,7 +135,7 @@ class Aliases:
         mageia = set()
         snyk = set()
         cpan = set()
-        arch = set()
+        archlinux = set()
         bellsoft = set()
 
         for a in aliases:
@@ -209,7 +209,7 @@ class Aliases:
             elif a.startswith("CPANSA-"):
                 cpan.add(a)
             elif a.startswith(("ASA-", "AVG-")):
-                arch.add(a)
+                archlinux.add(a)
             elif a.startswith("BELL-SA-"):
                 for v in generate_all_bellsoft_id_variants(a):
                     bellsoft.add(v)
@@ -244,7 +244,7 @@ class Aliases:
             mageia=list(mageia),
             snyk=list(snyk),
             cpan=list(cpan),
-            arch=list(arch),
+            archlinux=list(archlinux),
             bellsoft=list(bellsoft),
         )
 

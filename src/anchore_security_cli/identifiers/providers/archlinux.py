@@ -6,7 +6,7 @@ from anchore_security_cli.identifiers.aliases import Aliases
 from anchore_security_cli.identifiers.providers.provider import Provider, ProviderRecord
 
 
-class Arch(Provider):
+class ArchLinux(Provider):
     def __init__(self):
         super().__init__(
             name="Arch Linux Security Advisories",
