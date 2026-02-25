@@ -125,7 +125,7 @@ class Store:
                 for batch in batched(iglob(os.path.join(path, "**/ANCHORE-*.toml"), recursive=True), n=5000, strict=False):
                     executor.submit(self._process_file_batch, batch)
 
-            executor.shutdown(wait=True)
+            executor.shutdown(wait=True, cancel_futures=False)
             logging.info(f"Finish loading security identifier store from {path}")
 
     def lookup(self, alternate_id: str) -> set[AnchoreId] | None:
