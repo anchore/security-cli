@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from anchore_security_cli.identifiers.providers.almalinux import AlmaLinux
-from anchore_security_cli.identifiers.providers.arch import Arch
+from anchore_security_cli.identifiers.providers.archlinux import ArchLinux
 from anchore_security_cli.identifiers.providers.bellsoft import BellSoft
 from anchore_security_cli.identifiers.providers.bitnami import Bitnami
 from anchore_security_cli.identifiers.providers.chainguard import Chainguard
@@ -57,7 +57,7 @@ class Providers:
     julia: Julia
     mageia: Mageia
     cpan: CPAN
-    arch: Arch
+    archlinux: ArchLinux
     bellsoft: BellSoft
     wordfence: Wordfence
     grypedb_extras: GrypeDBExtraCVEs
@@ -128,7 +128,7 @@ def fetch_all() -> Providers:
         julia = executor.submit(Julia)
         mageia = executor.submit(Mageia)
         cpan = executor.submit(CPAN)
-        arch = executor.submit(Arch)
+        archlinux = executor.submit(ArchLinux)
         bellsoft = executor.submit(BellSoft)
         wordfence = executor.submit(Wordfence)
         grypedb_extras = executor.submit(GrypeDBExtraCVEs)
@@ -158,7 +158,7 @@ def fetch_all() -> Providers:
         julia=julia.result(),
         mageia=mageia.result(),
         cpan=cpan.result(),
-        arch=arch.result(),
+        archlinux=archlinux.result(),
         bellsoft=bellsoft.result(),
         wordfence=wordfence.result(),
         grypedb_extras=grypedb_extras.result(),
