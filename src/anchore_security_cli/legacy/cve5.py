@@ -332,7 +332,7 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
         }
 
     if cve5_references:
-        cve5["adp"]["references"] = cve5_references
+        cve5["adp"]["references"] = sorted(cve5_references, key = lambda k: k["url"])
 
     if cve5_affected:
         cve5["adp"]["affected"] = cve5_affected
