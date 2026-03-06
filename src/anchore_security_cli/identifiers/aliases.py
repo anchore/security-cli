@@ -89,6 +89,9 @@ class Aliases:
     cpan: list[str] = field(default_factory=list)
     archlinux: list[str] = field(default_factory=list)
     bellsoft: list[str] = field(default_factory=list)
+    fedora: list[str] = field(default_factory=list)
+    fedora_epel: list[str] = field(default_factory=list)
+    photon: list[str] = field(default_factory=list)
 
     @classmethod
     def normalize(cls, alias: str) -> str:
@@ -137,6 +140,9 @@ class Aliases:
         cpan = set()
         archlinux = set()
         bellsoft = set()
+        fedora = set()
+        fedora_epel = set()
+        photon = set()
 
         for a in aliases:
             a = cls.normalize(a)
@@ -213,6 +219,12 @@ class Aliases:
             elif a.startswith("BELL-SA-"):
                 for v in generate_all_bellsoft_id_variants(a):
                     bellsoft.add(v)
+            elif a.startswith("FEDORA-EPEL-"):
+                fedora_epel.add(a)
+            elif a.startswith("FEDORA-"):
+                fedora.add(a)
+            elif a.startswith("PHSA-"):
+                photon.add(a)
             else:
                 logging.warning(f"encountered unsupported alias: {a!r}")
 
@@ -246,6 +258,9 @@ class Aliases:
             cpan=list(cpan),
             archlinux=list(archlinux),
             bellsoft=list(bellsoft),
+            fedora=list(fedora),
+            fedora_epel=list(fedora_epel),
+            photon=list(photon),
         )
 
     def to_list(self, exclude: set[str] | None = None) -> list[str]:

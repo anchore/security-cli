@@ -32,22 +32,43 @@ class GrypeDB(Provider):
                 # lack of convenient bulk downloads: chainguard libs, oracle linux, and amazon linux
                 cur.execute("""
                 SELECT
-                    a.name as id,
-                    json_group_array(a.alias) as aliases,
-                    min(v.published_date) as published
+                    advisory,
+                    json_group_array(alias) aliases,
+                    min(published) as published
                 FROM
-                    vulnerability_aliases a
-                    inner join vulnerability_handles v
-                        on v.name=a.name
-                WHERE
-                    a.name like "CGA-%"
-                    or a.name like "ELSA-%"
-                    or a.name like "ALAS%"
-                GROUP BY a.name
+                (
+                    SELECT
+                        a.name as advisory,
+                        a.alias as alias,
+                        v.published_date as published
+                    FROM
+                        vulnerability_aliases a
+                        INNER JOIN vulnerability_handles v
+                            ON v.name=a.name
+                    WHERE
+                        a.name like "CGA-%"
+                        or a.name like "ELSA-%"
+                        or a.name like "ALAS%"
+                    UNION ALL
+                    SELECT
+                        json_extract(refs.value, '$.id') as advisory,
+                        v.name as alias,
+                        COALESCE(json_extract(ranges.value, '$.fix.detail.available.date'), v.published_date) as published
+                    FROM
+                        blobs b
+                        INNER JOIN affected_package_handles aph
+                            ON aph.blob_id = b.id
+                        INNER JOIN vulnerability_handles v
+                            ON v.id = aph.vulnerability_id,
+                        json_each(json_extract(b.value, '$.ranges')) ranges,
+                        json_each(json_extract(ranges.value, '$.fix.detail.references')) refs
+                    WHERE v.name != json_extract(refs.value, '$.id')
+                )
+                GROUP BY advisory
                 ;
                 """)
                 for row in cur.fetchall():
-                    record_id = row["id"]
+                    record_id = row["advisory"]
                     aliases = row["aliases"]
                     if aliases:
                         aliases = json.loads(aliases)
