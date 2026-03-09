@@ -97,8 +97,7 @@ exclude = [
 cache-dir = ".cache/ruff"
 line-length = 150
 extend-exclude = [
-  "**/tests/**",
-  "src/vunnel/providers/mariner/model/**" # these are generated
+  "src/anchore_security_cli/identifiers/providers/wordfence.py"
 ]
 
 [tool.ruff.lint]
