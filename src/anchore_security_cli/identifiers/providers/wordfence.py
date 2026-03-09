@@ -1,4 +1,3 @@
-from rich.pretty import d
 import logging
 
 import requests
