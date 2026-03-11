@@ -6,6 +6,7 @@ from anchore_security_cli.identifiers.providers.archlinux import ArchLinux
 from anchore_security_cli.identifiers.providers.bellsoft import BellSoft
 from anchore_security_cli.identifiers.providers.bitnami import Bitnami
 from anchore_security_cli.identifiers.providers.chainguard import Chainguard
+from anchore_security_cli.identifiers.providers.cnvd import CNVD
 from anchore_security_cli.identifiers.providers.cpan import CPAN
 from anchore_security_cli.identifiers.providers.cve5 import CVE5
 from anchore_security_cli.identifiers.providers.debian import Debian
@@ -37,6 +38,7 @@ class Providers:
     cve5: CVE5
     github: GitHub
     gcve: GCVE
+    cnvd: CNVD
     chainguard: Chainguard
     bitnami: Bitnami
     psf: PSF
@@ -109,6 +111,7 @@ def fetch_all() -> Providers:
         cve5 = executor.submit(CVE5)
         github = executor.submit(GitHub)
         gcve = executor.submit(GCVE)
+        cnvd = executor.submit(CNVD)
         openssf_malicious_packages = executor.submit(OpenSSFMaliciousPackages)
         ubuntu = executor.submit(Ubuntu)
         chainguard = executor.submit(Chainguard)
@@ -140,6 +143,7 @@ def fetch_all() -> Providers:
         cve5=cve5.result(),
         github=github.result(),
         gcve=gcve.result(),
+        cnvd=cnvd.result(),
         chainguard=chainguard.result(),
         bitnami=bitnami.result(),
         psf=psf.result(),

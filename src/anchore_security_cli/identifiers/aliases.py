@@ -62,6 +62,7 @@ def parse_identifier_from_url(url: str) -> str | None:
 class Aliases:
     cve: list[str] = field(default_factory=list)
     gcve: list[str] = field(default_factory=list)
+    cnvd: list[str] = field(default_factory=list)
     github: list[str] = field(default_factory=list)
     chainguard: list[str] = field(default_factory=list)
     bitnami: list[str] = field(default_factory=list)
@@ -113,6 +114,7 @@ class Aliases:
     def from_list(cls, aliases: list[str], provider: str | None = None):  # noqa: C901, PLR0912, PLR0915
         cve = set()
         gcve = set()
+        cnvd = set()
         github = set()
         chainguard = set()
         bitnami = set()
@@ -163,6 +165,8 @@ class Aliases:
                 cve_id = gcve_to_cve(a)
                 if cve_id:
                     cve.add(cve_id)
+            elif a.startswith("CNVD-"):
+                cnvd.add(a)
             elif a.startswith("GHSA-"):
                 github.add(a)
             elif a.startswith("CGA-"):
@@ -234,6 +238,7 @@ class Aliases:
         return Aliases(
             cve=list(cve),
             gcve=list(gcve),
+            cnvd=list(cnvd),
             github=list(github),
             chainguard=list(chainguard),
             bitnami=list(bitnami),
