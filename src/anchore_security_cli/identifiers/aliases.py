@@ -110,7 +110,7 @@ class Aliases:
         return alias
 
     @classmethod
-    def from_list(cls, aliases: list[str]):  # noqa: C901, PLR0912, PLR0915
+    def from_list(cls, aliases: list[str], provider: str | None = None):  # noqa: C901, PLR0912, PLR0915
         cve = set()
         gcve = set()
         github = set()
@@ -226,7 +226,10 @@ class Aliases:
             elif a.startswith("PHSA-"):
                 photon.add(a)
             else:
-                logging.warning(f"encountered unsupported alias: {a!r}")
+                message = f"encountered unsupported alias: {a!r}"
+                if provider:
+                    message = f"{provider}: {message}"
+                logging.warning(message)
 
         return Aliases(
             cve=list(cve),

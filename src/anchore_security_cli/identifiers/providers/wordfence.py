@@ -27,7 +27,7 @@ class Wordfence(Provider):
     #             records.append(
     #                 ProviderRecord(
     #                     id=cve,
-    #                     aliases=Aliases.from_list([cve, cve_to_gcve(cve)]),
+    #                     aliases=Aliases.from_list([cve, cve_to_gcve(cve)], provider=self.name),
     #                     published=self._parse_date(published),
     #                 ),
     #             )

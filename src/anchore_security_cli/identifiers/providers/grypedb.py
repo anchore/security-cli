@@ -76,7 +76,7 @@ class GrypeDB(Provider):
                     records.append(
                         ProviderRecord(
                             id=record_id,
-                            aliases=Aliases.from_list([record_id, *aliases]),
+                            aliases=Aliases.from_list([record_id, *aliases], provider=self.name),
                             published=self._parse_date(row["published"]),
                         ),
                     )
@@ -135,7 +135,7 @@ class GrypeDBExtraCVEs(Provider):
                     records.append(
                         ProviderRecord(
                             id=cve_id,
-                            aliases=Aliases.from_list([cve_id]),
+                            aliases=Aliases.from_list([cve_id], provider=self.name),
                             published=published,
                         ),
                     )

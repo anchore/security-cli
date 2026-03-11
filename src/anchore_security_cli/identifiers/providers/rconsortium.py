@@ -26,7 +26,7 @@ class RConsortium(ArchiveProvider):
                 data = yaml.safe_load(f)
 
             record_id = data["id"]
-            aliases = Aliases.from_list([record_id, *data.get("upstream", [])])
+            aliases = Aliases.from_list([record_id, *data.get("upstream", [])], provider=self.name)
             published = self._parse_date(data.get("published"))
 
             records.append(

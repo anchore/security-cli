@@ -54,7 +54,7 @@ class Chainguard(ArchiveProvider):
                 data = orjson.loads(f.read())
 
             record_id = data["id"]
-            aliases = Aliases.from_list([record_id, *self._parse_aliases(data)])
+            aliases = Aliases.from_list([record_id, *self._parse_aliases(data)], provider=self.name)
             published = self._parse_date(data.get("published"))
 
             records.append(

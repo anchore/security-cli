@@ -27,7 +27,7 @@ class Go(ArchiveProvider):
                 data = orjson.loads(f.read())
 
             record_id = data["id"]
-            aliases = Aliases.from_list([record_id, *data.get("aliases", [])])
+            aliases = Aliases.from_list([record_id, *data.get("aliases", [])], provider=self.name)
             published = self._parse_date(data.get("published"))
 
             records.append(
@@ -46,7 +46,7 @@ class Go(ArchiveProvider):
             record_id = data["id"]
             cves = data.get("cves", [])
             ghsas = data.get("ghsas", [])
-            aliases = Aliases.from_list(cves + ghsas)
+            aliases = Aliases.from_list(cves + ghsas, provider=self.name)
             published = self._parse_date(data.get("published"))
 
             records.append(
