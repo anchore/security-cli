@@ -45,7 +45,7 @@ class BellSoft(ArchiveProvider):
                         records.append(
                             ProviderRecord(
                                 id=v,
-                                aliases=Aliases.from_list([record_id]),
+                                aliases=Aliases.from_list([record_id], provider=self.name),
                                 published=self._parse_date(data.get("published")),
                             ),
                         )

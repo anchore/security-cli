@@ -35,7 +35,7 @@ class ArchLinux(Provider):
                     ProviderRecord(
                         id=record_id,
                         published=self._parse_date(None),
-                        aliases=Aliases.from_list([record_id, *aliases]),
+                        aliases=Aliases.from_list([record_id, *aliases], provider=self.name),
                     ),
                 )
 

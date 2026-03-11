@@ -38,7 +38,7 @@ class CPAN(Provider):
                     ProviderRecord(
                         id=record_id,
                         published=published,
-                        aliases=Aliases.from_list([record_id, *a.get("cves", [])]),
+                        aliases=Aliases.from_list([record_id, *a.get("cves", [])], provider=self.name),
                     ),
                 )
 

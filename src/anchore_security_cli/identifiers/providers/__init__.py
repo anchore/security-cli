@@ -10,6 +10,7 @@ from anchore_security_cli.identifiers.providers.cpan import CPAN
 from anchore_security_cli.identifiers.providers.cve5 import CVE5
 from anchore_security_cli.identifiers.providers.debian import Debian
 from anchore_security_cli.identifiers.providers.echo import Echo
+from anchore_security_cli.identifiers.providers.gcve import GCVE
 from anchore_security_cli.identifiers.providers.github import GitHub
 from anchore_security_cli.identifiers.providers.go import Go
 from anchore_security_cli.identifiers.providers.grypedb import GrypeDB, GrypeDBExtraCVEs
@@ -35,6 +36,7 @@ from anchore_security_cli.identifiers.store import CURRENT_ALLOCATION_ALIAS_KEYS
 class Providers:
     cve5: CVE5
     github: GitHub
+    gcve: GCVE
     chainguard: Chainguard
     bitnami: Bitnami
     psf: PSF
@@ -106,6 +108,7 @@ def fetch_all() -> Providers:
     with ThreadPoolExecutor() as executor:
         cve5 = executor.submit(CVE5)
         github = executor.submit(GitHub)
+        gcve = executor.submit(GCVE)
         openssf_malicious_packages = executor.submit(OpenSSFMaliciousPackages)
         ubuntu = executor.submit(Ubuntu)
         chainguard = executor.submit(Chainguard)
@@ -136,6 +139,7 @@ def fetch_all() -> Providers:
     return Providers(
         cve5=cve5.result(),
         github=github.result(),
+        gcve=gcve.result(),
         chainguard=chainguard.result(),
         bitnami=bitnami.result(),
         psf=psf.result(),

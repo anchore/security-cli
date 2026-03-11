@@ -26,7 +26,7 @@ class Mageia(ArchiveProvider):
                 data = orjson.loads(f.read())
 
             record_id = data["id"]
-            aliases = Aliases.from_list([record_id, *data.get("related", [])])
+            aliases = Aliases.from_list([record_id, *data.get("related", [])], provider=self.name)
             published = self._parse_date(data.get("published"))
 
             records.append(

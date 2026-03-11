@@ -43,7 +43,7 @@ class GitHub(ArchiveProvider):
                 ProviderRecord(
                     id=record_id,
                     published=published,
-                    aliases=Aliases.from_list(aliases),
+                    aliases=Aliases.from_list(aliases, provider=self.name),
                 ),
             )
 
