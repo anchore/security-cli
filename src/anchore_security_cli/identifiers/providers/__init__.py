@@ -17,6 +17,7 @@ from anchore_security_cli.identifiers.providers.github import GitHub
 from anchore_security_cli.identifiers.providers.go import Go
 from anchore_security_cli.identifiers.providers.grypedb import GrypeDB, GrypeDBExtraCVEs
 from anchore_security_cli.identifiers.providers.julia import Julia
+from anchore_security_cli.identifiers.providers.jvndb import JVNDB
 from anchore_security_cli.identifiers.providers.mageia import Mageia
 from anchore_security_cli.identifiers.providers.minimos import MinimOS
 from anchore_security_cli.identifiers.providers.openeuler import OpenEuler
@@ -41,6 +42,7 @@ class Providers:
     gcve: GCVE
     enisa: ENISA
     cnvd: CNVD
+    jvndb: JVNDB
     chainguard: Chainguard
     bitnami: Bitnami
     psf: PSF
@@ -114,6 +116,7 @@ def fetch_all() -> Providers:
         github = executor.submit(GitHub)
         gcve = executor.submit(GCVE)
         cnvd = executor.submit(CNVD)
+        jvndb = executor.submit(JVNDB)
         enisa = executor.submit(ENISA)
         openssf_malicious_packages = executor.submit(OpenSSFMaliciousPackages)
         ubuntu = executor.submit(Ubuntu)
@@ -148,6 +151,7 @@ def fetch_all() -> Providers:
         gcve=gcve.result(),
         enisa=enisa.result(),
         cnvd=cnvd.result(),
+        jvndb=jvndb.result(),
         chainguard=chainguard.result(),
         bitnami=bitnami.result(),
         psf=psf.result(),

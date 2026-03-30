@@ -64,6 +64,7 @@ class Aliases:
     gcve: list[str] = field(default_factory=list)
     enisa: list[str] = field(default_factory=list)
     cnvd: list[str] = field(default_factory=list)
+    jvndb: list[str] = field(default_factory=list)
     github: list[str] = field(default_factory=list)
     chainguard: list[str] = field(default_factory=list)
     bitnami: list[str] = field(default_factory=list)
@@ -117,6 +118,7 @@ class Aliases:
         gcve = set()
         enisa = set()
         cnvd = set()
+        jvndb = set()
         github = set()
         chainguard = set()
         bitnami = set()
@@ -171,6 +173,8 @@ class Aliases:
                 enisa.add(a)
             elif a.startswith("CNVD-"):
                 cnvd.add(a)
+            elif a.startswith("JVNDB-"):
+                jvndb.add(a)
             elif a.startswith("GHSA-"):
                 github.add(a)
             elif a.startswith("CGA-"):
@@ -244,6 +248,7 @@ class Aliases:
             gcve=list(gcve),
             enisa=list(enisa),
             cnvd=list(cnvd),
+            jvndb=list(jvndb),
             github=list(github),
             chainguard=list(chainguard),
             bitnami=list(bitnami),
