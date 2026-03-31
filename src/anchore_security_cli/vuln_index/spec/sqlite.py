@@ -6,7 +6,7 @@ from itertools import batched
 from pathlib import Path
 
 import jsonschema_rs
-import orjson
+import json
 import requests
 
 from anchore_security_cli.identifiers.anchore_id import parse
@@ -25,11 +25,11 @@ class SchemaValidator:
         json_schema = requests.get(self.schema_url, timeout=30).json()
         self._validator = jsonschema_rs.validator_for(json_schema)
 
-    def validate(self, value: bytes):
+    def validate(self, value: str):
         if self._validator is None:
             self._retrieve_schema_def()
 
-        self._validator.validate(orjson.loads(value))
+        self._validator.validate(json.loads(value))
 
 
 class SQLiteIndex(BaseSQLiteIndex):
@@ -119,7 +119,7 @@ class SQLiteIndex(BaseSQLiteIndex):
 
                 anchore_id = parse(toml_data["vuln"]["id"])
                 record = self._toml_to_json(toml_data)
-                jsonified = orjson.dumps(record, option=orjson.OPT_SORT_KEYS)
+                jsonified = json.dumps(record, sort_keys=True)
                 self.validator.validate(jsonified)
 
                 conn.execute(

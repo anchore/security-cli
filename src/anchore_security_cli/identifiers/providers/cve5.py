@@ -2,7 +2,7 @@ import logging
 import os
 from glob import iglob
 
-import orjson
+import json
 
 from anchore_security_cli.identifiers.aliases import Aliases, cve_to_gcve, parse_identifier_from_url
 from anchore_security_cli.identifiers.providers.provider import ArchiveProvider, ProviderRecord
@@ -22,8 +22,8 @@ class CVE5(ArchiveProvider):
                 continue
 
             logging.trace(f"processing CVE5 data for {file}")
-            with open(file, "rb") as f:
-                data = orjson.loads(f.read())
+            with open(file, "r") as f:
+                data = json.load(f)
 
             metadata = data.get("cveMetadata")
             if not metadata:

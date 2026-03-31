@@ -2,7 +2,7 @@ import logging
 import os
 from glob import iglob
 
-import orjson
+import json
 import yaml
 
 from anchore_security_cli.identifiers.aliases import Aliases
@@ -23,8 +23,8 @@ class Go(ArchiveProvider):
                 continue
 
             logging.trace(f"processing {self.name} data for {file}")
-            with open(file, "rb") as f:
-                data = orjson.loads(f.read())
+            with open(file, "r") as f:
+                data = json.load(f)
 
             record_id = data["id"]
             aliases = Aliases.from_list([record_id, *data.get("aliases", [])], provider=self.name)

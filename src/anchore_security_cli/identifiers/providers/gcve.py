@@ -1,6 +1,6 @@
 import logging
 
-import orjson
+import json
 import requests
 
 from anchore_security_cli.identifiers.aliases import Aliases
@@ -36,7 +36,7 @@ class GCVE(Provider):
             r.raise_for_status()
 
             for record in r.iter_lines():
-                gcve = orjson.loads(record)
+                gcve = json.loads(record)
                 metadata = gcve.get("cveMetadata")
 
                 if not metadata:
