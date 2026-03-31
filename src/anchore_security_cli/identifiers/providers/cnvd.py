@@ -1,6 +1,6 @@
+import json
 import logging
 
-import orjson
 import requests
 
 from anchore_security_cli.identifiers.aliases import Aliases
@@ -31,7 +31,7 @@ class CNVD(Provider):
         r.raise_for_status()
 
         for record in r.iter_lines():
-            cnvd = orjson.loads(record)
+            cnvd = json.loads(record)
 
             cnvd_id = cnvd.get("number")
             if not cnvd_id:
