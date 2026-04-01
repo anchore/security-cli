@@ -1,8 +1,7 @@
+import json
 import logging
 import os
 from glob import iglob
-
-import orjson
 
 from anchore_security_cli.identifiers.aliases import Aliases, parse_identifier_from_url
 from anchore_security_cli.identifiers.providers.provider import ArchiveProvider, ProviderRecord
@@ -22,8 +21,8 @@ class GitHub(ArchiveProvider):
                 continue
 
             logging.trace(f"processing {self.name} data for {file}")
-            with open(file, "rb") as f:
-                data = orjson.loads(f.read())
+            with open(file) as f:
+                data = json.load(f)
 
             record_id = data["id"]
             published = self._parse_date(data.get("published"))

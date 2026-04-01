@@ -1,8 +1,7 @@
+import json
 import logging
 import os
 from glob import iglob
-
-import orjson
 
 from anchore_security_cli.identifiers.aliases import Aliases
 from anchore_security_cli.identifiers.providers.provider import ArchiveProvider, ProviderRecord
@@ -22,8 +21,8 @@ class AlmaLinux(ArchiveProvider):
                 continue
 
             logging.trace(f"processing {self.name} data for {file}")
-            with open(file, "rb") as f:
-                data = orjson.loads(f.read())
+            with open(file) as f:
+                data = json.load(f)
 
             record_id = data["id"]
             aliases = Aliases.from_list([record_id, *data.get("related", [])], provider=self.name)

@@ -1,18 +1,26 @@
+import json
 import os
 import sqlite3
 import tomllib
+from datetime import date, datetime
 from glob import iglob
 from itertools import batched
 from pathlib import Path
 
 import jsonschema_rs
-import orjson
 import requests
 
 from anchore_security_cli.identifiers.anchore_id import parse
 from anchore_security_cli.index.base import SQLiteIndex as BaseSQLiteIndex
 from anchore_security_cli.index.config import IndexConfig
 from anchore_security_cli.index.version import IndexVersion
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return json.JSONEncoder.default(self, obj)
 
 
 class SchemaValidator:
@@ -25,11 +33,11 @@ class SchemaValidator:
         json_schema = requests.get(self.schema_url, timeout=30).json()
         self._validator = jsonschema_rs.validator_for(json_schema)
 
-    def validate(self, value: bytes):
+    def validate(self, value: str):
         if self._validator is None:
             self._retrieve_schema_def()
 
-        self._validator.validate(orjson.loads(value))
+        self._validator.validate(json.loads(value))
 
 
 class SQLiteIndex(BaseSQLiteIndex):
@@ -119,7 +127,7 @@ class SQLiteIndex(BaseSQLiteIndex):
 
                 anchore_id = parse(toml_data["vuln"]["id"])
                 record = self._toml_to_json(toml_data)
-                jsonified = orjson.dumps(record, option=orjson.OPT_SORT_KEYS)
+                jsonified = json.dumps(record, sort_keys=True, cls=DateTimeEncoder)
                 self.validator.validate(jsonified)
 
                 conn.execute(

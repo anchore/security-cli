@@ -1,6 +1,6 @@
+import json
 import logging
 
-import orjson
 import requests
 
 from anchore_security_cli.identifiers.aliases import Aliases
@@ -23,7 +23,7 @@ class JVNDB(Provider):
         r.raise_for_status()
 
         for record in r.iter_lines():
-            jvndb = orjson.loads(record)
+            jvndb = json.loads(record)
 
             jvndb_id = jvndb.get("sec:identifier")
             if not jvndb_id:
