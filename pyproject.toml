@@ -154,24 +154,5 @@ select = [
 
 [dependency-groups]
 dev = [
-    "pytest-mock<4.0.0,>=3.14.0",
-    "pytest>=8.3.4,<10.0.0",
-    "pre-commit<5.0.0,>=4.0.1",
-    "mypy<2.0,>=1.13",
-    "isort>=5.13.2,<8.0.0",
-    "pylint>=3.3.2,<5.0.0",
-    "autoflake<3.0,>=2.3",
-    "ruff>=0.8.1,<1.0.0",
-    "pytest-unordered<1.0.0,>=0.6.1",
-    "pytest-sugar<2.0.0,>=1.0.0",
-    "pytest-clarity<2.0.0,>=1.0.1",
-    "pytest-cov>=6.0.0,<8.0.0",
-    "pytest-picked<1.0.0,>=0.5.0",
-    "pytest-xdist<4.0.0,>=3.6.1",
-    "types-requests<3.0.0.0,>=2.32.0.20241016",
-    "types-tabulate<1.0.0.0,>=0.9.0.20240106",
-    "types-pyyaml<7.0.0.0,>=6.0.12.20240917",
-    "types-pygments<3.0.0.0,>=2.18.0.20240506",
-    "hatchling>=1.27.0",
-    "hatch-vcs>=0.4.0",
+    "ruff>=0.15.8,<1.0.0",
 ]
