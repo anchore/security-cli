@@ -8,14 +8,14 @@ class Consolidator:
         self._path = data_path
         self.store: Store = Store(data_path)
 
-    def consolidate(self, identifiers: list[str], resolve_to: str):
+    def consolidate(self, identifiers: list[str], resolve_to: str, validate: bool=True):
         with timer("security identifiers consolidation"):
             requests = []
             if identifiers:
                 if resolve_to:
                     requests.append(ConsolidationRequest(
-                        to = resolve_to,
                         records = identifiers,
+                        to = resolve_to,
                     ))
                 else:
                     requests.append(ConsolidationRequest(
@@ -23,3 +23,7 @@ class Consolidator:
                     ))
 
             self.store.consolidate(requests)
+
+            if validate:
+                with timer("security identifiers store validation"):
+                    self.store.validate()

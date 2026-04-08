@@ -57,7 +57,7 @@ class Allocator:
 
         return aliases
 
-    def allocate(self, refresh: bool = True):  # noqa: C901, PLR0912, PLR0915
+    def allocate(self, refresh: bool = True, validate: bool = True):  # noqa: C901, PLR0912, PLR0915
         with timer("security identifiers allocation"):
             logging.info(f"Start allocating ids using existing security identifier data from {self.data_path}")
 
@@ -120,7 +120,8 @@ class Allocator:
                 logging.info("Finish processing OpenSSF Malicious Packages allocations")
                 logging.info("Finish processing allocations")
 
-            with timer("security identifiers allocation validation"):
-                self.store.validate()
+            if validate:
+                with timer("security identifiers allocation validation"):
+                    self.store.validate()
 
             logging.info(f"Finish allocating ids using existing security identifier data from {self.data_path}")
