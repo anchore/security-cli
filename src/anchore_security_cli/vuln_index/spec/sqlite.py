@@ -121,27 +121,31 @@ class SQLiteIndex(BaseSQLiteIndex):
     def _render(self, data_path: str, conn: sqlite3.Connection):
         for batch in batched(iglob(os.path.join(data_path, "**/ANCHORE-*.toml"), recursive=True), n=5000, strict=False):
             for file in batch:
-                self._logger.trace(f"Start rendering index data for file at {file}")
-                with open(file, "rb") as f:
-                    toml_data = tomllib.load(f)
+                try:
+                    self._logger.trace(f"Start rendering index data for file at {file}")
+                    with open(file, "rb") as f:
+                        toml_data = tomllib.load(f)
 
-                anchore_id = parse(toml_data["vuln"]["id"])
-                record = self._toml_to_json(toml_data)
-                jsonified = json.dumps(record, sort_keys=True, cls=DateTimeEncoder)
-                self.validator.validate(jsonified)
+                    anchore_id = parse(toml_data["vuln"]["id"])
+                    record = self._toml_to_json(toml_data)
+                    jsonified = json.dumps(record, sort_keys=True, cls=DateTimeEncoder)
+                    self.validator.validate(jsonified)
 
-                conn.execute(
-                    """
-                    INSERT INTO `records` (
-                        `anchore_id`, `year`, `index`, `spec`
-                    ) VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        str(anchore_id),
-                        anchore_id.year,
-                        anchore_id.index,
-                        jsonified,
-                    ),
-                )
-                self._logger.trace(f"Finish rendering index data for file at {file}")
+                    conn.execute(
+                        """
+                        INSERT INTO `records` (
+                            `anchore_id`, `year`, `index`, `spec`
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        (
+                            str(anchore_id),
+                            anchore_id.year,
+                            anchore_id.index,
+                            jsonified,
+                        ),
+                    )
+                    self._logger.trace(f"Finish rendering index data for file at {file}")
+                except Exception:
+                    self._logger.error(f"Unable to render file at {file}")
+                    raise
             conn.commit()
