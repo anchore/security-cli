@@ -64,47 +64,30 @@ class SQLiteIndex(BaseSQLiteIndex):
     def _render(self, data_path: str, conn: sqlite3.Connection):
         for batch in batched(iglob(os.path.join(data_path, "**/ANCHORE-*.toml"), recursive=True), n=5000, strict=False):
             for file in batch:
-                self._logger.trace(f"Start rendering index data for file at {file}")
-                with open(file, "rb") as f:
-                    data = tomllib.load(f)
+                try:
+                    self._logger.trace(f"Start rendering index data for file at {file}")
+                    with open(file, "rb") as f:
+                        data = tomllib.load(f)
 
-                s = data["security"]
-                anchore_id = parse(s["id"])
-                conn.execute(
-                    """
-                    INSERT INTO `security_identifiers` (
-                        `anchore_id`, `year`, `index`, `allocated`
-                    ) VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        s["id"],
-                        anchore_id.year,
-                        anchore_id.index,
-                        s["allocated"],
-                    ),
-                )
+                    s = data["security"]
+                    anchore_id = parse(s["id"])
+                    conn.execute(
+                        """
+                        INSERT INTO `security_identifiers` (
+                            `anchore_id`, `year`, `index`, `allocated`
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        (
+                            s["id"],
+                            anchore_id.year,
+                            anchore_id.index,
+                            s["allocated"],
+                        ),
+                    )
 
-                # Always insert an alias record for the `anchore` provider to the record.
-                # This gives a single simple lookup mechanism for indexing into the `security_identifiers`
-                # table given any id.
-                conn.execute(
-                    """
-                    INSERT INTO `security_aliases` (
-                        `anchore_id`, `alias_provider`, `alias_id`
-                    ) VALUES (?, ?, ?)
-                    """,
-                    (
-                        s["id"],
-                        "anchore",
-                        s["id"],
-                    ),
-                )
-
-                for duplicate in s.get("duplicates", []):
-                    if duplicate == s["id"]:
-                        self._logger.warning(f"Unnecessary duplicate: {duplicate}")
-                        continue
-
+                    # Always insert an alias record for the `anchore` provider to the record.
+                    # This gives a single simple lookup mechanism for indexing into the `security_identifiers`
+                    # table given any id.
                     conn.execute(
                         """
                         INSERT INTO `security_aliases` (
@@ -114,12 +97,15 @@ class SQLiteIndex(BaseSQLiteIndex):
                         (
                             s["id"],
                             "anchore",
-                            duplicate,
+                            s["id"],
                         ),
                     )
 
-                for provider, aliases in s.get("aliases", {}).items():
-                    for alias in aliases:
+                    for duplicate in s.get("duplicates", []):
+                        if duplicate == s["id"]:
+                            self._logger.warning(f"Unnecessary duplicate: {duplicate}")
+                            continue
+
                         conn.execute(
                             """
                             INSERT INTO `security_aliases` (
@@ -128,9 +114,27 @@ class SQLiteIndex(BaseSQLiteIndex):
                             """,
                             (
                                 s["id"],
-                                provider,
-                                alias,
+                                "anchore",
+                                duplicate,
                             ),
                         )
-                self._logger.trace(f"Finish rendering index data for file at {file}")
+
+                    for provider, aliases in s.get("aliases", {}).items():
+                        for alias in aliases:
+                            conn.execute(
+                                """
+                                INSERT INTO `security_aliases` (
+                                    `anchore_id`, `alias_provider`, `alias_id`
+                                ) VALUES (?, ?, ?)
+                                """,
+                                (
+                                    s["id"],
+                                    provider,
+                                    alias,
+                                ),
+                            )
+                    self._logger.trace(f"Finish rendering index data for file at {file}")
+                except Exception:
+                    self._logger.error(f"Unable to render file at {file}")
+                    raise
             conn.commit()
