@@ -89,6 +89,17 @@ class SQLiteIndex(BaseSQLiteIndex):
 
         for _, provider_records in record["vuln"]["providers"].items():
             for provider_record in provider_records:
+                # Render all of the default values in published json output to avoid having to make assumptions
+                # regarding defaults in all consumers
+                if "enrichment" in provider_record and "enabled" not in provider_record["enrichment"]:
+                    provider_record["enrichment"]["enabled"] = True
+
+                if "disputed" in provider_record and "override" not in provider_record["disputed"]:
+                    provider_record["disputed"]["override"] = True
+
+                if "suppression" in provider_record and "override" not in provider_record["suppression"]:
+                    provider_record["suppression"]["override"] = True
+
                 if "products" not in provider_record:
                     continue
 
