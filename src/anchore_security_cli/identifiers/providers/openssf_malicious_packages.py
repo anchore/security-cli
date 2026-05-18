@@ -4,11 +4,16 @@ import os
 from glob import iglob
 
 from anchore_security_cli.identifiers.aliases import Aliases
+from anchore_security_cli.identifiers.providers.models.alteration import Alteration
 from anchore_security_cli.identifiers.providers.provider import ArchiveProvider, ProviderRecord
 
+alterations: list[Alteration] = [
+    Alteration(identifier="MAL-2024-3834", drop={"GHSA-r6x6-85h3-39v6"}),
+]
 
 class OpenSSFMaliciousPackages(ArchiveProvider):
     def __init__(self):
+        self._indexed_alterations = {a.identifier:a for a in alterations}
         super().__init__(
             name="OpenSSF Malicious Packages",
             url="https://github.com/ossf/malicious-packages/archive/refs/heads/main.tar.gz",
@@ -25,7 +30,18 @@ class OpenSSFMaliciousPackages(ArchiveProvider):
                 data = json.load(f)
 
             record_id = data["id"]
-            aliases = Aliases.from_list([record_id, *data.get("aliases", [])], provider=self.name)
+
+            aliases = data.get("aliases", [])
+            if record_id in self._indexed_alterations:
+                alteration = self._indexed_alterations[record_id]
+                if alteration.drop and aliases:
+                    aliases = list(set(aliases)-alteration.drop)
+
+                if alteration.add:
+                    for identifier in alteration.add:
+                        aliases.append(identifier)
+
+            aliases = Aliases.from_list([record_id, *aliases], provider=self.name)
             published = self._parse_date(data.get("published"))
 
             if not record_id.startswith("MAL-"):
