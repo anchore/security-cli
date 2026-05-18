@@ -154,5 +154,5 @@ select = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.8,<1.0.0",
+    "ruff>=0.15.12,<1.0.0",
 ]
