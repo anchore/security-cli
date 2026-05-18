@@ -25,6 +25,10 @@ class PyPA(ArchiveProvider):
             with open(file) as f:
                 data = yaml.safe_load(f)
 
+            # Skip records that don't yet have a valid identifier
+            if "id" not in data or data.get("id").startswith("PYSEC-0000-"):
+                continue
+
             record_id = data["id"]
             aliases = Aliases.from_list([record_id, *data.get("aliases", [])], provider=self.name)
             published = self._parse_date(data.get("published"))
