@@ -29,7 +29,13 @@ class OpenSSFMaliciousPackages(ArchiveProvider):
             with open(file) as f:
                 data = json.load(f)
 
-            record_id = data["id"]
+            record_id = data.get("id")
+
+            if not record_id or not record_id.startswith("MAL-"):
+                continue
+
+            if record_id.startswith("MAL-0000-"):
+                continue
 
             aliases = data.get("aliases", [])
             if record_id in self._indexed_alterations:
