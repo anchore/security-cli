@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import tomllib
+from copy import deepcopy
 from dataclasses import dataclass
 from glob import iglob
 from typing import Any
@@ -316,6 +317,14 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
                 if versions:
                     p["versions"] = versions
 
+                if record_type == "jenkins-plugin":
+                    p2 = deepcopy(p)
+                    p2["collectionURL"] = r["registry"]
+                    p2["packageName"] = r["plugin_name"]
+                    if "packageURL" in p2:
+                        del p2["packageURL"]
+                    cve5_affected.append(p2)
+
     for patch_ref in patch_references:
         cve5_references.append(
             {
@@ -388,7 +397,6 @@ def _process_spec_file(spec_file: str, output_dir: str):
 
 def generate(spec_path: str, output: str):
     logging.info(f"Start generating CVE 5 from {spec_path}")
-
     for f in iglob(os.path.join(spec_path, "**/ANCHORE-*.toml"), recursive=True):
         logging.debug(f"Start processing spec {f}")
         _process_spec_file(f, output)
