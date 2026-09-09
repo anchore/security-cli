@@ -152,10 +152,13 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
 
                 match record_type:
                     case "maven" | "jenkins-plugin":
-                        group_id = r.get("group_id")
-                        artifact_id = r.get("artifact_id")
-                        if group_id and artifact_id:
-                            p["packageName"] = f"{group_id}:{artifact_id}"
+                        group_id = r["group_id"]
+                        artifact_id = r["artifact_id"]
+                        p["packageName"] = f"{group_id}:{artifact_id}"
+                    case "vscode-extension":
+                        publisher = r["publisher"]
+                        extension_name = r["extension_name"]
+                        p["packageName"] = f"{publisher}.{extension_name}"
                     case _:
                         package_name = r.get("package_name")
                         if package_name:
