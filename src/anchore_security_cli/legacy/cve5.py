@@ -366,6 +366,11 @@ def _process_spec_file(spec_file: str, output_dir: str):
         enriched = tomllib.load(f)
 
     curator = enriched.get("curator", {})
+    needs_review = curator.get("needs_review", False)
+    if needs_review:
+        logging.warning(f"Skipping {spec_file} as it is marked with `needs_review = true`.")
+        return
+
     vuln = enriched.get("vuln")
     if not vuln:
         logging.warning(f"Skipping {spec_file}.  No vulnerability data section found.")
