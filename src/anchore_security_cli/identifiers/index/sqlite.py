@@ -39,7 +39,7 @@ class SQLiteIndex(BaseSQLiteIndex):
             CREATE TABLE IF NOT EXISTS `security_aliases` (
                 `anchore_id` TEXT COLLATE NOCASE NOT NULL,
                 `alias_provider` TEXT COLLATE NOCASE NOT NULL,
-                `alias_id` TEXT COLLATE NOCASE NOT NULL,
+                `alias_id` TEXT COLLATE NOT NULL,
                 PRIMARY KEY (anchore_id, alias_provider, alias_id)
             )
         """)
