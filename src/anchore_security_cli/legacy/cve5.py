@@ -346,7 +346,6 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
         cve5_references.append(
             {
                 "url": patch_ref,
-                "tags": ["patch"],
             },
         )
 
@@ -361,12 +360,6 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
             if not ex:
                 existing[url] = CVEReferenceIndex(url=url, index=next_index, value=ref)
                 next_index += 1
-            elif "tags" not in existing[url].value:
-                existing[url].value["tags"] = ref.get("tags", [])
-            else:
-                for t in ref.get("tags", []):
-                    if t not in existing[url].value["tags"]:
-                        existing[url].value["tags"].append(t)
 
         for ref in sorted(existing.values(), key=lambda r: r.index):
             ordered.append(ref.value)
