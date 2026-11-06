@@ -19,6 +19,11 @@ class CVERecord:
     snapshot: dict[str, Any]
     vuln: dict[str, Any]
 
+@dataclass(frozen=False, slots=True)
+class CVEReferenceIndex:
+    url: str
+    index: int
+    value: dict
 
 def _construct_cpe(cpe: dict[str, str]) -> str:
     part = cpe.get("part", "a")
@@ -341,10 +346,32 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
         cve5_references.append(
             {
                 "url": patch_ref,
+                "tags": ["patch"],
             },
         )
 
-    if cve5_affected or cve5_references:
+    next_index = 0
+    ordered = []
+    if cve5_references:
+        existing: dict[str, CVEReferenceIndex] = {}
+
+        for ref in cve5_references:
+            url = ref["url"]
+            ex = existing.get(url)
+            if not ex:
+                existing[url] = CVEReferenceIndex(url=url, index=next_index, value=ref)
+                next_index += 1
+            elif "tags" not in existing[url].value:
+                existing[url].value["tags"] = ref.get("tags", [])
+            else:
+                for t in ref.get("tags", []):
+                    if t not in existing[url].value["tags"]:
+                        existing[url].value["tags"].append(t)
+
+        for ref in sorted(existing.values(), key=lambda r: r.index):
+            ordered.append(ref.value)
+
+    if cve5_affected or ordered:
         cve5["adp"] = {
             "providerMetadata": {
                 "orgId": "00000000-0000-4000-8000-000000000000",
@@ -352,8 +379,8 @@ def _process_cve_record(cve: CVERecord, curator: dict[str, Any], output_dir: str
             },
         }
 
-    if cve5_references:
-        cve5["adp"]["references"] = sorted(cve5_references, key = lambda k: k["url"])
+    if ordered:
+        cve5["adp"]["references"] = ordered
 
     if cve5_affected:
         cve5["adp"]["affected"] = cve5_affected
