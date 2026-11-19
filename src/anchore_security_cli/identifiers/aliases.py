@@ -98,7 +98,7 @@ class Aliases:
 
     @classmethod
     def normalize(cls, alias: str) -> str:
-        alias = alias.strip()
+        alias = alias.replace("%20", " ").replace("%2C", ",").strip(" ,")
         alias = alias.replace("‑", "-")  # noqa: RUF001
 
         if alias.startswith("UBUNTU-CVE-"):
